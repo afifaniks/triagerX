@@ -2,3 +2,8 @@
 ```
 sbatch arc_nb_server.sh
 ```
+
+## Stop Batch
+```
+scancel {JOB_ID}
+```
