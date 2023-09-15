@@ -1,0 +1,2 @@
+/var/spool/slurmd/job22796966/slurm_script: line 11: 1197931 Killed                  jupyter notebook --no-browser --ip="*" --port=9779 --NotebookApp.token=letmepass777 --notebook-dir="/home/mdafifal.mamun/notebooks/triagerX/notebook"
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=22796966.batch. Some of your processes may have been killed by the cgroup out-of-memory handler.
