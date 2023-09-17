@@ -1,9 +1,9 @@
-## Run Server on ARC Cluster
+## Run Jupyter NB Server on ARC Cluster
 ```
-sbatch arc_nb_server.sh
+sbatch ./start_nb_server_job.sh
 ```
 
-## Stop Batch
+## Stop Server
 ```
-scancel {JOB_ID}
+./stop_nb_server_job.sh
 ```
