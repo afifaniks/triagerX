@@ -2,4 +2,6 @@ slurm_out/
 .ipynb_checkpoints
 llama-2-7b-guanaco-qlora
 data/
+results/
+outputs/
 llama-2-7b-deeptriage/
