@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import logging
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -27,27 +27,18 @@ base_url = f"https://api.github.com/repos/{owner}/{repo}"
 Path("data").mkdir(parents=True, exist_ok=True)
 
 
-def fetch_issues(file_name=f"data/openj9_data_{int(time.time())}.csv"):
+def fetch_issues():
     page = 1
-    per_page = 50
-
-    with open(file_name, "w"):
-        pass
-
-    csv_file = open(file_name, "a")
-    csv_writer = csv.writer(csv_file)
+    per_page = 100
 
     while True:
-        logger.info(f"Processing Page: {page}")
-        issues_url = f"{base_url}/issues?state=all&page={page}&per_page={per_page}"
-        issues_response = requests.get(issues_url, auth=(github_username, github_token))
-        issues = issues_response.json()
+        file_name = f"data/openj9_data_{page}.csv"
 
-        if len(issues) == 0:
-            logger.info("Reached to the end. Exiting...")
-            csv_file.close()
-            break
+        with open(file_name, "w"):
+            pass
 
+        csv_file = open(file_name, "a")
+        csv_writer = csv.writer(csv_file)
         csv_writer.writerow(
             [
                 "issue_number",
@@ -60,6 +51,16 @@ def fetch_issues(file_name=f"data/openj9_data_{int(time.time())}.csv"):
                 "assignees",
             ]
         )
+
+        logger.info(f"Processing Page: {page}")
+        issues_url = f"{base_url}/issues?state=all&page={page}&per_page={per_page}"
+        issues_response = requests.get(issues_url, auth=(github_username, github_token))
+        issues = issues_response.json()
+
+        if len(issues) == 0:
+            logger.info("Reached to the end. Exiting...")
+            csv_file.close()
+            break
 
         extract_issue_details(csv_writer, issues)
 
@@ -77,6 +78,7 @@ def extract_issue_details(csv_writer, issues):
 
 
 def parse_issue_detail(csv_writer, issue):
+    logger.debug(issue)
     issue_number = issue["number"]
     issue_title = issue["title"]
     issue_body = issue["body"]
@@ -84,7 +86,7 @@ def parse_issue_detail(csv_writer, issue):
     issue_state = issue["state"]
     issue_creator = issue["user"]["login"]
     logger.info(f"Extracting issue: {issue_url}")
-    comments_url = f"{base_url}/issues/9217/comments"
+    comments_url = f"{base_url}/issues/{issue_number}/comments"
     comments_response = requests.get(comments_url, auth=(github_username, github_token))
     comments = comments_response.json()
     comment_bodies = [
