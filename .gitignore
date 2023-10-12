@@ -8,3 +8,4 @@ llama-2-7b-deeptriage/
 venv/
 .env
 env/
+.idea/

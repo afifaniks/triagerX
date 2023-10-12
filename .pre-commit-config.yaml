@@ -21,8 +21,8 @@ repos:
         exclude: tests
         stages: [ commit ]
 
-  - repo: https://github.com/ambv/black
-    rev: 22.3.0
-    hooks:
-      - id: black
-        stages: [ commit ]
+#  - repo: https://github.com/ambv/black
+#    rev: 22.3.0
+#    hooks:
+#      - id: black
+#        stages: [ commit ]
