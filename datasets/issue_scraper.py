@@ -3,7 +3,6 @@ from pathlib import Path
 import requests
 import os
 import csv
-import time
 from dotenv import load_dotenv
 import logging
 
