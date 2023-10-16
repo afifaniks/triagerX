@@ -2,7 +2,7 @@
 #SBATCH -J JupyterServer
 #SBATCH -t 5:00:00
 #SBATCH -n 1
-#SBATCH --mem=40G
+#SBATCH --mem=80G
 #SBATCH --partition=gpu-a100 --gres=gpu:1
 #SBATCH --output=./slurm_out/%j.out
 
