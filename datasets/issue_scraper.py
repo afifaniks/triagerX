@@ -48,6 +48,7 @@ def fetch_issues():
                 "creator",
                 "comments",
                 "assignees",
+                "labels",
             ]
         )
 
@@ -84,6 +85,8 @@ def parse_issue_detail(csv_writer, issue):
     issue_url = issue["html_url"]
     issue_state = issue["state"]
     issue_creator = issue["user"]["login"]
+    labels = issue["labels"]
+    label_names = ", ".join([label["name"] for label in labels]) if labels else ""
     logger.info(f"Extracting issue: {issue_url}")
     comments_url = f"{base_url}/issues/{issue_number}/comments"
     comments_response = requests.get(comments_url, auth=(github_username, github_token))
@@ -106,6 +109,7 @@ def parse_issue_detail(csv_writer, issue):
             issue_creator,
             "\n".join(comment_bodies),
             ", ".join(assignee_logins),
+            label_names,
         ]
     )
 
