@@ -49,6 +49,8 @@ def fetch_issues():
                 "comments",
                 "assignees",
                 "labels",
+                "created_at",
+                "closed_at",
             ]
         )
 
@@ -99,6 +101,8 @@ def parse_issue_detail(csv_writer, issue):
     assignee_logins = (
         [assignee["login"] for assignee in assignees] if len(assignees) > 0 else []
     )
+    created_at = issue["created_at"]
+    closed_at = issue["closed_at"]
     csv_writer.writerow(
         [
             issue_number,
@@ -110,6 +114,8 @@ def parse_issue_detail(csv_writer, issue):
             "\n".join(comment_bodies),
             ", ".join(assignee_logins),
             label_names,
+            created_at,
+            closed_at,
         ]
     )
 
