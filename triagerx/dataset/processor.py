@@ -2,7 +2,7 @@ import pandas as pd
 from loguru import logger
 
 
-class Processor:
+class DatasetProcessor:
     @staticmethod
     def load_dataframe(path: str) -> pd.DataFrame:
         logger.debug(f"Loading dataframe: {path}")
@@ -21,31 +21,31 @@ class Processor:
 
     @staticmethod
     def prepare_dataframe(
-        df: pd.DataFrame, minimum_contribution: int = 0
+        df: pd.DataFrame, sample_threshold: int = 0
     ) -> pd.DataFrame:
         logger.debug(
-            f"Filtering developers based on minimum contribution: {minimum_contribution}..."
+            f"Filtering developers based on minimum contribution: {sample_threshold}..."
         )
+        df = df[df["assignees"].notna()]
         developers = df["assignees"].value_counts()
-        filtered_developers = developers.index[developers >= minimum_contribution]
+        filtered_developers = developers.index[developers >= sample_threshold]
         df = df[df["assignees"].isin(filtered_developers)]
 
         logger.debug("Generating 'text' field...")
-        df["text"] = df.apply(
-            lambda x: str(x["issue_title"]) + "\n" + str(x["issue_body"]), axis=1
-        )
-        df["owner_id"] = pd.factorize(df["assignees"])[0]
+        df["text"] = df.apply(lambda x: "Title: " + str(x["issue_title"]) + "\nDescription: " + str(x["issue_body"]), axis=1)
 
         min_length = 15
         logger.debug(f"Dropping rows with 'text' length < {min_length}...")
         df = df[df["text"].str.len().gt(min_length)]
 
+        df["owner_id"] = pd.factorize(df["assignees"])[0]
+
         return df
 
     @staticmethod
-    def process_dataset(path: str) -> pd.DataFrame:
-        df = Processor.load_dataframe(path=path)
-        df = Processor.prepare_dataframe(df=df)
-        df = Processor.clean_data(df=df)
+    def process_dataset(path: str, sample_threshold: int = 0) -> pd.DataFrame:
+        df = DatasetProcessor.load_dataframe(path=path)
+        df = DatasetProcessor.prepare_dataframe(df=df, sample_threshold=sample_threshold)
+        df = DatasetProcessor.clean_data(df=df)
 
         return df
