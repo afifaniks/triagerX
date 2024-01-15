@@ -4,6 +4,7 @@ import pandas as pd
 from pydantic import BaseModel
 from torch import nn
 from torch.optim import Optimizer
+from torch.utils.data.sampler import Sampler
 
 
 class TrainConfig(BaseModel):
@@ -16,7 +17,7 @@ class TrainConfig(BaseModel):
     epochs: int
     output_file: str
     scheduler: Optional[nn.Module] = None
-    sampler: Optional[nn.Module] = None
+    sampler: Optional[Sampler] = None
     wandb: Optional[Dict] = None
 
     class Config:

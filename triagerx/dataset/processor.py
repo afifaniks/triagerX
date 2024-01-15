@@ -20,9 +20,7 @@ class DatasetProcessor:
         return df
 
     @staticmethod
-    def prepare_dataframe(
-        df: pd.DataFrame, sample_threshold: int = 0
-    ) -> pd.DataFrame:
+    def prepare_dataframe(df: pd.DataFrame, sample_threshold: int = 0) -> pd.DataFrame:
         logger.debug(
             f"Filtering developers based on minimum contribution: {sample_threshold}..."
         )
@@ -32,7 +30,13 @@ class DatasetProcessor:
         df = df[df["assignees"].isin(filtered_developers)]
 
         logger.debug("Generating 'text' field...")
-        df["text"] = df.apply(lambda x: "Title: " + str(x["issue_title"]) + "\nDescription: " + str(x["issue_body"]), axis=1)
+        df["text"] = df.apply(
+            lambda x: "Title: "
+            + str(x["issue_title"])
+            + "\nDescription: "
+            + str(x["issue_body"]),
+            axis=1,
+        )
 
         min_length = 15
         logger.debug(f"Dropping rows with 'text' length < {min_length}...")
@@ -45,7 +49,9 @@ class DatasetProcessor:
     @staticmethod
     def process_dataset(path: str, sample_threshold: int = 0) -> pd.DataFrame:
         df = DatasetProcessor.load_dataframe(path=path)
-        df = DatasetProcessor.prepare_dataframe(df=df, sample_threshold=sample_threshold)
+        df = DatasetProcessor.prepare_dataframe(
+            df=df, sample_threshold=sample_threshold
+        )
         df = DatasetProcessor.clean_data(df=df)
 
         return df
