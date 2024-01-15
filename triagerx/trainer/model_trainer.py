@@ -100,7 +100,7 @@ class ModelTrainer:
 
             if val_loss < best_loss:
                 logger.success("Found new best model. Saving weights...")
-                torch.save(model.state_dict(), self._config.ouout_file)
+                torch.save(model.state_dict(), self._config.output_file)
                 best_loss = val_loss
 
         if self._config.wandb:
