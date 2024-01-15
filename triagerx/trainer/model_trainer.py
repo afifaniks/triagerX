@@ -1,10 +1,10 @@
 import torch
-import wandb
 from loguru import logger
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from triagerx.dataset.triage_dataset import TriageDataset
 from triagerx.trainer.train_config import TrainConfig
 
@@ -17,7 +17,7 @@ class ModelTrainer:
         wandb.init(**self._config.wandb)
 
     def train(self, model: nn.Module):
-        tokenizer = self._config.model.tokenizer()
+        tokenizer = model.tokenizer()
         criterion = self._config.criterion
         optimizer = self._config.optimizer
         train_data = self._config.train_dataset
@@ -35,15 +35,15 @@ class ModelTrainer:
             dataset=train,
             batch_size=self._config.batch_size,
             shuffle=False if sampler else True,
-            sampler=sampler if sampler else None,
+            sampler=sampler,
         )
         val_dataloader = DataLoader(val, batch_size=self._config.batch_size)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.debug(f"Selected compute device: {device}")
         best_loss = float("inf")
 
-        if device == "cuda":
+        if torch.cuda.is_available():
+            logger.debug(f"Selected compute device: {device}")
             model = model.cuda()
             criterion = criterion.cuda()
 
@@ -103,7 +103,8 @@ class ModelTrainer:
                 torch.save(model.state_dict(), self._config.ouout_file)
                 best_loss = val_loss
 
-        wandb.finish()
+        if self._config.wandb:
+            wandb.finish()
 
     def _log_step(
         self,
