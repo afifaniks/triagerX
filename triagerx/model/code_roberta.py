@@ -1,42 +1,35 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
-from transformers import RobertaModel, RobertaTokenizer
+from torch import nn
+from transformers import AutoModel, AutoTokenizer
 
 
 class CodeRobertaClassifier(nn.Module):
     def __init__(
         self,
-        text_model_name: str,
-        code_model_name: str,
         output_size,
-        embed_size=1024,
-        dropout=0.1,
+        text_model: str = "roberta-base",
+        code_model: str = "microsoft/codebert-base",
+        embed_size=768,
+        dropout=0.1
     ) -> None:
         super().__init__()
-        self.base_model = RobertaModel.from_pretrained(
-            text_model_name, output_hidden_states=True
+        self.text_model = AutoModel.from_pretrained(
+            text_model
         )
-        filter_sizes = [3, 4, 5, 6]
-        num_filters = 256
-        self._tokenizer = RobertaTokenizer.from_pretrained(text_model_name)
-        self._convs = nn.ModuleList(
-            [nn.Conv2d(4, num_filters, (K, embed_size)) for K in filter_sizes]
+        self.code_model = AutoModel.from_pretrained(
+            code_model
         )
-        self._dropout = nn.Dropout(dropout)
-        self._fc = nn.Linear(len(filter_sizes) * num_filters, output_size)
-        self._relu = nn.ReLU()
+        self._text_tokenizer = AutoTokenizer.from_pretrained(text_model)
+        self._code_tokenizer = AutoTokenizer.from_pretrained(code_model)
+        self.linear = nn.Linear(embed_size*2, output_size)
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
 
-    def forward(self, input_ids, attention_mask):
-        x = self.base_model(input_ids, attention_mask=attention_mask)[2][-4:]
-        x = torch.stack(x, dim=1)
-        x = [F.relu(conv(x)).squeeze(3) for conv in self._convs]
-        x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]
-        x = torch.cat(x, 1)
-        x = self._dropout(x)
-        logit = self._fc(x)
+    def forward(self, text_input_ids, text_mask, code_input_ids, code_mask):
+        _, text_pooler_out = self.text_model(text_input_ids, text_mask, return_dict=False)
+        _, code_pooler_out = self.code_model(code_input_ids, code_mask, return_dict=False)
+        out_cat = torch.cat([text_pooler_out, code_pooler_out], dim=1)
+        out_cat = self.dropout(out_cat)
 
-        return self._relu(logit)
-
-    def tokenizer(self) -> RobertaTokenizer:
-        return self._tokenizer
+        return self.relu(self.linear(out_cat))
