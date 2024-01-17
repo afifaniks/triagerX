@@ -31,7 +31,7 @@ class RobertaCNNClassifier(nn.Module):
         x = self._dropout(x)
         logit = self._fc(x)
 
-        return self._relu(logit)
+        return logit
 
     def tokenizer(self) -> RobertaTokenizer:
         return self._tokenizer
