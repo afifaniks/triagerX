@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import pandas as pd
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ class TrainConfig(BaseModel):
     batch_size: int
     epochs: int
     output_file: str
-    scheduler: Optional[nn.Module] = None
+    scheduler: Optional[Any] = None
     sampler: Optional[Sampler] = None
     wandb: Optional[Dict] = None
 

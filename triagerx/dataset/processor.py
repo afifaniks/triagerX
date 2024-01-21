@@ -33,6 +33,8 @@ class DatasetProcessor:
         df["text"] = df.apply(
             lambda x: "Title: "
             + str(x["issue_title"])
+            + "\nLabels: "
+            + str(x["labels"])
             + "\nDescription: "
             + str(x["issue_body"]),
             axis=1,

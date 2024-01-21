@@ -1,5 +1,7 @@
+import numpy as np
 import torch
 from loguru import logger
+from sklearn.metrics import precision_recall_fscore_support
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -71,6 +73,9 @@ class ModelTrainer:
             total_acc_val = 0
             total_loss_val = 0
 
+            all_preds = []
+            all_labels = []
+
             with torch.no_grad():
 
                 for val_input, val_label in val_dataloader:
@@ -84,9 +89,18 @@ class ModelTrainer:
                     total_loss_val += batch_loss.item()
 
                     acc = (output.argmax(dim=1) == val_label).sum().item()
+
+                    all_preds.append(output.argmax(dim=1).cpu().numpy())
+                    all_labels.append(val_label.cpu().numpy())
+
                     total_acc_val += acc
 
-            val_loss = total_loss_val / len(validation_data)
+            all_preds = np.concatenate(all_preds)
+            all_labels = np.concatenate(all_labels)
+
+            precision, recall, f1_score, _ = precision_recall_fscore_support(
+                all_preds, all_labels, average="macro"
+            )
 
             self._log_step(
                 epoch_num,
@@ -94,9 +108,17 @@ class ModelTrainer:
                 total_acc_val,
                 total_loss_train,
                 total_loss_val,
+                precision,
+                recall,
+                f1_score,
                 train_data,
                 validation_data,
             )
+
+            val_loss = total_loss_val / len(validation_data)
+
+            if self._config.scheduler:
+                self._config.scheduler.step(val_loss)
 
             if val_loss < best_loss:
                 logger.success("Found new best model. Saving weights...")
@@ -113,13 +135,19 @@ class ModelTrainer:
         total_acc_val,
         total_loss_train,
         total_loss_val,
+        precision,
+        recall,
+        f1_score,
         train_data,
         validation_data,
     ):
         log = f"Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
                     | Train Accuracy: {total_acc_train / len(train_data): .3f} \
                     | Val Loss: {total_loss_val / len(validation_data): .3f} \
-                    | Val Accuracy: {total_acc_val / len(validation_data): .3f}"
+                    | Val Accuracy: {total_acc_val / len(validation_data): .3f} \
+                    | Precision: {precision: .3f} \
+                    | Recall: {recall: .3f} \
+                    | F1-score: {f1_score: .3f}"
 
         logger.info(log)
 
@@ -130,5 +158,8 @@ class ModelTrainer:
                     "train_loss": total_loss_train / len(train_data),
                     "val_acc": total_acc_val / len(validation_data),
                     "val_loss": total_loss_val / len(validation_data),
+                    "precision": precision,
+                    "recall": recall,
+                    "f1-score": f1_score,
                 }
             )
