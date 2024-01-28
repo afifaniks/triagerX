@@ -6,12 +6,22 @@ from transformers import RobertaModel, RobertaTokenizer
 
 class LBTPClassifier(nn.Module):
     def __init__(
-        self, model_name: str, output_size, bert_unfreeze_layers=4, embed_size=1024, dropout=0.1
+        self, output_size, bert_unfreeze_layers=4, embed_size=1024, dropout=0.1
     ) -> None:
         super().__init__()
         self.base_model = RobertaModel.from_pretrained(
-            model_name, output_hidden_states=True
+            "roberta-large", output_hidden_states=True
         )
+
+        # Freeze embedding layers
+        for p in self.base_model.embeddings.parameters():
+            p.requires_grad = False
+
+        # Freeze encoder layers till defined unfreeze layers
+        for i in range (0, 24 - bert_unfreeze_layers):
+            for p in self.base_model.encoder.layer[i].parameters():
+                p.requires_grad = False
+
         filter_sizes = [3, 4, 5, 6]
         self._num_filters = 256
         self._max_tokens = 512
