@@ -12,6 +12,14 @@ class RobertaFCNClassifier(nn.Module):
     ) -> None:
         super().__init__()
         self.base = AutoModel.from_pretrained(model_name)
+
+        for p in self.base.embeddings.parameters():
+                p.requires_grad = False
+
+        for i in range (0, 20):
+            for p in self.base.encoder.layer[i].parameters():
+                p.requires_grad = False
+
         self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.linear = nn.Linear(embed_size, embed_size // 2)
         self.linear2 = nn.Linear(embed_size // 2, output_size)
