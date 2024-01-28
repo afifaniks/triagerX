@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 from loguru import logger
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import (precision_recall_fscore_support,
+                             top_k_accuracy_score)
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -72,6 +73,7 @@ class ModelTrainer:
 
             total_acc_val = 0
             total_loss_val = 0
+            correct_top_k = 0
 
             all_preds = []
             all_labels = []
@@ -84,9 +86,13 @@ class ModelTrainer:
                     input_id = val_input["input_ids"].squeeze(1).to(device)
 
                     output = model(input_id, mask)
+                    _, top_k_predictions = output.topk(10, 1, True, True)
 
                     batch_loss = criterion(output, val_label.long())
                     total_loss_val += batch_loss.item()
+                    top_k_predictions = top_k_predictions.t()
+
+                    correct_top_k += top_k_predictions.eq(val_label.view(1, -1).expand_as(top_k_predictions)).sum().item()
 
                     acc = (output.argmax(dim=1) == val_label).sum().item()
 
@@ -99,8 +105,10 @@ class ModelTrainer:
             all_labels = np.concatenate(all_labels)
 
             precision, recall, f1_score, _ = precision_recall_fscore_support(
-                all_preds, all_labels, average="macro"
+                all_labels, all_preds, average="macro"
             )
+
+            top10 = correct_top_k/len(validation_data)
 
             self._log_step(
                 epoch_num,
@@ -113,6 +121,7 @@ class ModelTrainer:
                 f1_score,
                 train_data,
                 validation_data,
+                top10
             )
 
             val_loss = total_loss_val / len(validation_data)
@@ -127,7 +136,7 @@ class ModelTrainer:
 
         if self._config.wandb:
             wandb.finish()
-
+    
     def _log_step(
         self,
         epoch_num,
@@ -140,11 +149,13 @@ class ModelTrainer:
         f1_score,
         train_data,
         validation_data,
+        topk
     ):
         log = f"Epochs: {epoch_num + 1} | Train Loss: {total_loss_train / len(train_data): .3f} \
                     | Train Accuracy: {total_acc_train / len(train_data): .3f} \
                     | Val Loss: {total_loss_val / len(validation_data): .3f} \
                     | Val Accuracy: {total_acc_val / len(validation_data): .3f} \
+                    | Top 10: {topk} \
                     | Precision: {precision: .3f} \
                     | Recall: {recall: .3f} \
                     | F1-score: {f1_score: .3f}"
@@ -161,5 +172,6 @@ class ModelTrainer:
                     "precision": precision,
                     "recall": recall,
                     "f1-score": f1_score,
+                    "top10": topk
                 }
             )
