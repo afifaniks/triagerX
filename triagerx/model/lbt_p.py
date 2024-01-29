@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 from transformers import RobertaModel, RobertaTokenizer
 
 
@@ -9,9 +9,11 @@ class LBTPClassifier(nn.Module):
         self, output_size, bert_unfreeze_layers=4, embed_size=1024, dropout=0.1
     ) -> None:
         super().__init__()
+        model_name = "roberta-large"
         self.base_model = RobertaModel.from_pretrained(
-            "roberta-large", output_hidden_states=True
+            model_name, output_hidden_states=True
         )
+        self._tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
         # Freeze embedding layers
         for p in self.base_model.embeddings.parameters():
@@ -34,7 +36,7 @@ class LBTPClassifier(nn.Module):
                 nn.ReLU(),
                 nn.Flatten(),
                 nn.MaxPool1d(self._max_tokens - (K - 1)),
-                nn.Flatten(start_dim=0)
+                nn.Flatten(start_dim=1)
             )
             for K in filter_sizes])
             for _ in range(bert_unfreeze_layers)]
@@ -55,9 +57,10 @@ class LBTPClassifier(nn.Module):
         hidden_states = base_out.hidden_states[-self._bert_unfreeze_layers:]
 
         for i in range(self._bert_unfreeze_layers):
-          x = [conv(hidden_states[0]) for conv in self.conv_blocks[i]]
-          x = torch.cat(x)
-          x = torch.cat([pooler_out, x])
+          batch_size, sequence_length, hidden_size = hidden_states[i].size()
+          x = [conv(hidden_states[i].view(batch_size, 1, sequence_length, hidden_size)) for conv in self.conv_blocks[i]]          
+          x = torch.cat(x, dim=1)   
+          x = torch.cat([pooler_out, x], dim=1)    
           x = self.dropout(x)
           x = self.classifiers[i](x)
           
