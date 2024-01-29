@@ -4,19 +4,15 @@ from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 
 class RobertaFCNClassifier(nn.Module):
     def __init__(
-        self, 
-        model_name: str, 
-        output_size, 
-        embed_size=1024, 
-        dropout=0.1
+        self, model_name: str, output_size, embed_size=1024, dropout=0.1
     ) -> None:
         super().__init__()
         self.base = AutoModel.from_pretrained(model_name)
 
         for p in self.base.embeddings.parameters():
-                p.requires_grad = False
+            p.requires_grad = False
 
-        for i in range (0, 20):
+        for i in range(0, 20):
             for p in self.base.encoder.layer[i].parameters():
                 p.requires_grad = False
 
