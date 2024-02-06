@@ -11,8 +11,8 @@ from transformers import (
     TrainingArguments,
     pipeline,
     logging,
-    StoppingCriteria, 
-    StoppingCriteriaList
+    StoppingCriteria,
+    StoppingCriteriaList,
 )
 from peft import LoraConfig, PeftModel
 from trl import SFTTrainer
@@ -46,7 +46,9 @@ filtered_developers = developers.index[developers >= minimum_contribution]
 filtered_df = df[df["assignees"].isin(filtered_developers)]
 
 # %%
-filtered_df.to_csv("/home/mdafifal.mamun/notebooks/triagerX/notebook/openj9_issues_cleaned.csv")
+filtered_df.to_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/notebook/openj9_issues_cleaned.csv"
+)
 
 # %% [markdown]
 # ## Model Configuration
@@ -57,15 +59,17 @@ data_path = "/home/mdafifal.mamun/notebooks/triagerX/notebook/openj9_issues_clea
 new_model = "llama-2-13b-openj9"
 
 # Set QLoRA configuration
-lora_r = 64 # Attention dimension/rank
+lora_r = 64  # Attention dimension/rank
 lora_alpha = 16
 lora_dropout = 0.05
 
 # Set bitsandbytes configuration
-use_4bit = True #For  4-bit precision base model loading
-bnb_4bit_compute_dtype = "float16" # Compute dtype for 4-bit base models
-bnb_4bit_quant_type = "nf4" # Quantization type (fp4 or nf4)
-use_nested_quant = False # Activate nested quantization for 4-bit base models (double quantization)
+use_4bit = True  # For  4-bit precision base model loading
+bnb_4bit_compute_dtype = "float16"  # Compute dtype for 4-bit base models
+bnb_4bit_quant_type = "nf4"  # Quantization type (fp4 or nf4)
+use_nested_quant = (
+    False  # Activate nested quantization for 4-bit base models (double quantization)
+)
 
 
 # Set training params
@@ -84,14 +88,14 @@ optim = "paged_adamw_32bit"
 lr_scheduler_type = "cosine"
 max_steps = 300
 warmup_ratio = 0.03
-group_by_length = True # Group sequences into batches with same length saves memory and speeds up training considerably
+group_by_length = True  # Group sequences into batches with same length saves memory and speeds up training considerably
 save_steps = 0
 logging_steps = 5
 
 # Set SFT parameters
 max_seq_length = None
-packing = False # Pack multiple short examples in the same input sequence to increase efficiency
-device_map = {"": 0} # Load the entire model on the GPU 0
+packing = False  # Pack multiple short examples in the same input sequence to increase efficiency
+device_map = {"": 0}  # Load the entire model on the GPU 0
 
 # %%
 compute_dtype = getattr(torch, bnb_4bit_compute_dtype)
@@ -109,14 +113,14 @@ bnb_config = BitsAndBytesConfig(
 # %%
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    quantization_config=bnb_config, # Using it for optimized model loading
-    device_map=device_map
+    quantization_config=bnb_config,  # Using it for optimized model loading
+    device_map=device_map,
 )
 
 # %%
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "right" # Fix overflow issue with fp16 training
+tokenizer.padding_side = "right"  # Fix overflow issue with fp16 training
 
 # %% [markdown]
 # ## Prompt Template Generation
@@ -127,8 +131,10 @@ tokenizer.padding_side = "right" # Fix overflow issue with fp16 training
 
 import xml.etree.ElementTree as ET
 
+
 def parse_comments(comments: str):
-    xml_like =  ET.ElementTree(ET.fromstring(comments))
+    xml_like = ET.ElementTree(ET.fromstring(comments))
+
 
 def generate_prompt_with_answer(entry, i):
     # comments = entry["comments"] # TBD
@@ -136,7 +142,7 @@ def generate_prompt_with_answer(entry, i):
     issue_title = entry["issue_title"][i]
     issue_description = entry["issue_body"][i]
     assignees = entry["assignees"][i]
-    
+
     prompt = f"""<s><INST>Suggest a developer from the given developer list based on the issue title and description given below. The name of developers are separated by comma. You have to choose only one based on previous knowledge. If the question cannot be answered using the information provided answer with "I don't know".
 Developer List: {", ".join(filtered_developers.values)}
 
@@ -150,6 +156,7 @@ Answer: {assignees}</s>
 """
 
     return prompt
+
 
 def generate_prompt_without_answer(entry):
     issue_title = entry["issue_title"]
@@ -170,7 +177,6 @@ Answer: </s>
     return prompt
 
 
-
 # %%
 print(generate_prompt_with_answer(filtered_df, 477))
 
@@ -178,31 +184,44 @@ print(generate_prompt_with_answer(filtered_df, 477))
 # ## Test Base Model
 
 # %%
-device = f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu'
-stop_list = ['\nHuman:', '\n```\n']
+device = f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu"
+stop_list = ["\nHuman:", "\n```\n"]
 
-stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
+stop_token_ids = [tokenizer(x)["input_ids"] for x in stop_list]
 stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
 
+
 class StopOnTokens(StoppingCriteria):
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
         for stop_ids in stop_token_ids:
-            if torch.eq(input_ids[0][-len(stop_ids):], stop_ids).all():
+            if torch.eq(input_ids[0][-len(stop_ids) :], stop_ids).all():
                 return True
         return False
+
 
 stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
 # %%
 def inference(model, tokenizer, prompt, max_length=20):
-  total_response_length = len(tokenizer.tokenize(prompt)) + 8 + max_length
-  pipe = pipeline(task="text-generation", model=model, max_length=total_response_length, tokenizer=tokenizer, stopping_criteria=stopping_criteria)
-  result = pipe(prompt)
+    total_response_length = len(tokenizer.tokenize(prompt)) + 8 + max_length
+    pipe = pipeline(
+        task="text-generation",
+        model=model,
+        max_length=total_response_length,
+        tokenizer=tokenizer,
+        stopping_criteria=stopping_criteria,
+    )
+    result = pipe(prompt)
 
-  return result[0]["generated_text"]
+    return result[0]["generated_text"]
+
 
 # %%
-print(inference(model, tokenizer, generate_prompt_without_answer(filtered_df.iloc[300])))
+print(
+    inference(model, tokenizer, generate_prompt_without_answer(filtered_df.iloc[300]))
+)
 
 # %% [markdown]
 # ## Setup Training Pipeline
@@ -213,12 +232,13 @@ dataset = load_dataset("csv", data_files=data_path, split="train")
 # %%
 def format_dataset(data):
     output_texts = []
-    
+
     for i in range(len(data["issue_number"])):
         formatted_text = generate_prompt_with_answer(data, i)
         output_texts.append(formatted_text)
 
     return output_texts
+
 
 # %%
 if compute_dtype == torch.float16 and use_4bit:
@@ -228,7 +248,7 @@ if compute_dtype == torch.float16 and use_4bit:
         print("Your GPU supports bfloat16: accelerate training with bf16=True")
         print("=" * 80)
     else:
-      print(f"Using {compute_dtype}")
+        print(f"Using {compute_dtype}")
 
 # %%
 model.config.use_cache = False
@@ -269,7 +289,7 @@ trainer = SFTTrainer(
     tokenizer=tokenizer,
     args=training_params,
     packing=packing,
-    formatting_func=format_dataset
+    formatting_func=format_dataset,
 )
 
 trainer.train()
@@ -300,7 +320,9 @@ output = ""
 for i in range(10):
     output += f"Observation: {i + 1}\n"
     output += "=====================================================================================\n"
-    prompt_template = generate_prompt_without_answer(filtered_df.iloc[random.randint(0, len(filtered_df) - 1)])
+    prompt_template = generate_prompt_without_answer(
+        filtered_df.iloc[random.randint(0, len(filtered_df) - 1)]
+    )
     output += inference(model, tokenizer, prompt_template, 30)
     output += "\n\n============================================================================================\n\n"
 
