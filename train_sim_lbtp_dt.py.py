@@ -60,7 +60,7 @@ sample_threshold=20
 samples_per_block = len(df) // num_cv + 1
 print(f"Samples per block: {samples_per_block}")
 
-block = 1
+block = 8
 X_df = df[:samples_per_block*block]
 y_df = df[samples_per_block*block : samples_per_block * (block+1)]
 
@@ -94,7 +94,7 @@ y_df["owner_id"] = y_df["owner"].apply(lambda owner: lbl2idx[owner])
 class CombineLoss(nn.Module):
     def __init__(self, class_weights) -> None:
         super().__init__()
-        self._ce = nn.CrossEntropyLoss(weight=class_weights)
+        self._ce = nn.CrossEntropyLoss()
 
     def forward(
         self,
@@ -127,14 +127,14 @@ sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 from sklearn.utils.class_weight import compute_class_weight
 
 # %%
-class_weights = compute_class_weight('balanced', classes=X_df["owner_id"].unique(), y=X_df["owner_id"].to_numpy())
+# class_weights = compute_class_weight('balanced', classes=X_df["owner_id"].unique(), y=X_df["owner_id"].to_numpy())
 
 # Convert class weights to a tensor
-class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
+# class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
 
 # %%
 learning_rate = 1e-5
-epochs = 15
+epochs = 10
 batch_size = 15
 
 # %%
@@ -155,7 +155,7 @@ wandb_config = {
     }
 }
 
-criterion = CombineLoss(class_weights_tensor)
+criterion = CombineLoss(None)
 optimizer = Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer, "min", patience=10, factor=0.1, threshold=1e-8)
 
@@ -371,7 +371,7 @@ with torch.no_grad():
 
 # %%
 print(f"Correct Prediction without Similarity: {correct_top_k_wo_sim}")
-print(f"Correct Prediction without Similarity: {correct_top_k}")
+print(f"Correct Prediction with Similarity: {correct_top_k}")
 print(f"Top 10 Acc without Sim: {correct_top_k_wo_sim / len(y_df)}")
 print(f"Top 10 Acc with Sim: {correct_top_k / len(y_df)}")
 
