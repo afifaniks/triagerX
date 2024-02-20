@@ -38,7 +38,8 @@ class Evaluator:
             softmax = nn.Softmax(dim=1)
 
             with torch.no_grad():
-                y_pred = softmax(model(ids, mask))
+                # y_pred = softmax(model(ids, mask))
+                y_pred = softmax(torch.sum(torch.stack(model(ids, mask)), 0))
 
             y_preds.append(y_pred)
 
