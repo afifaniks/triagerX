@@ -1,7 +1,7 @@
 # %%
-import torch
 import numpy as np
 import pandas as pd
+import torch
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
@@ -14,7 +14,6 @@ from triagerx.model.roberta_cnn import RobertaCNNClassifier
 from triagerx.model.roberta_fcn import RobertaFCNClassifier
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
-
 
 # %%
 
@@ -61,7 +60,7 @@ sample_threshold=20
 samples_per_block = len(df) // num_cv + 1
 print(f"Samples per block: {samples_per_block}")
 
-block = 5
+block = 9
 sliced_df = df[: samples_per_block * (block+1)]
 
 # %%
@@ -134,15 +133,13 @@ y_df["owner_id"] = y_df["owner"].apply(lambda owner: lbl2idx[owner])
 # %%
 X_df.owner.value_counts().plot(kind="bar")
 
-# %%
-from sentence_transformers import SentenceTransformer
-
+import numpy as np
 # %%
 import pandas as pd
-import numpy as np
 from loguru import logger
+# %%
+from sentence_transformers import SentenceTransformer
 from torch.utils.data import Dataset
-
 from transformers import PreTrainedTokenizer
 
 
@@ -301,7 +298,7 @@ class CombineLoss(nn.Module):
         return loss
 
 # %%
-from torch.optim import AdamW 
+from torch.optim import AdamW
 
 # %%
 class_counts = np.bincount(X_df["owner_id"])
@@ -313,7 +310,7 @@ weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 learning_rate = 1e-5
-epochs = 15
+epochs = 10
 batch_size = 15
 
 model = LBTPClassifierTopic(len(X_df.owner_id.unique()), 20)
@@ -348,6 +345,7 @@ if torch.cuda.is_available():
 
 # %%
 from sklearn.metrics import precision_recall_fscore_support
+
 
 # %%
 def log_step(
@@ -480,7 +478,7 @@ for epoch_num in range(epochs):
 
     if val_loss < best_loss:
         logger.success("Found new best model. Saving weights...")
-        torch.save(model.state_dict(), "ensemble_dt.pt")
+        torch.save(model.state_dict(), f"ensemble_dt_{block}_deberta.pt")
         best_loss = val_loss
 
 # %%
@@ -489,9 +487,9 @@ model.load_state_dict(torch.load("ensemble_dt.pt"))
 # %%
 loader = DataLoader(val, 30)
 
+import numpy as np
 # %%
 from sentence_transformers import SentenceTransformer, util
-import numpy as np
 
 # %%
 similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -617,5 +615,6 @@ labels = sorted(set(labels))
 labels = [f"{idx}: {idx2label[idx]}" for idx in labels]
 
 from sklearn.metrics import classification_report
+
 print(classification_report(all_labels_np, all_preds_np, target_names=labels))
 
