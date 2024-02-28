@@ -60,7 +60,7 @@ sample_threshold=20
 samples_per_block = len(df) // num_cv + 1
 print(f"Samples per block: {samples_per_block}")
 
-block = 8
+block = 9
 X_df = df[:samples_per_block*block]
 y_df = df[samples_per_block*block : samples_per_block * (block+1)]
 
@@ -77,6 +77,7 @@ unwanted = list(test_owners - train_owners)
 y_df = y_df[~y_df["owner"].isin(unwanted)]
 
 print(f"Training data: {len(X_df)}, Validation data: {len(y_df)}")
+print(f"Total developers: {len(X_df.owner.unique())}")
 
 # %%
 lbl2idx = {}
@@ -134,7 +135,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 # %%
 learning_rate = 1e-5
-epochs = 10
+epochs = 12
 batch_size = 15
 
 # %%

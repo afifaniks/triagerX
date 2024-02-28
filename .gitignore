@@ -17,3 +17,6 @@ nohup.out
 __pycache__/
 datasets/
 *.out
+topic_model_gc/config.json
+topic_model_gc/topic_embeddings.safetensors
+topic_model_gc/topics.json

@@ -15,9 +15,9 @@ from triagerx.model.roberta_fcn import RobertaFCNClassifier
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
 
-dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/deeptriage/gc_20.json"
+dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/deeptriage/gc_20_topics_hdbscan.csv"
 
-df = pd.read_json(dataset_path)
+df = pd.read_csv(dataset_path)
 df = df[df["owner"].notna()]
 
 def clean_data(df):
@@ -30,6 +30,8 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["text"] = df.apply(
             lambda x: "Title: "
             + str(x["issue_title"])
+            + "\Topic of the issue: "
+            + str(x["topic_label"])
             + "\nDescription: "
             + str(x["description"]),
             axis=1,
@@ -55,7 +57,7 @@ sample_threshold=20
 samples_per_block = len(df) // num_cv + 1
 print(f"Samples per block: {samples_per_block}")
 
-block = 7
+block = 1
 X_df = df[:samples_per_block*block]
 y_df = df[samples_per_block*block : samples_per_block * (block+1)]
 
@@ -130,7 +132,7 @@ batch_size = 15
 sampler_name = sampler.__class__.__name__ if sampler else "None"
 model_name = model.__class__.__name__
 
-output_file = f"dt_lbtp_cv{block}_{model_name}_20_{sampler_name}"
+output_file = f"dt_lbtp_cv{block}_topic_{model_name}_20_{sampler_name}"
 output_path = f"/home/mdafifal.mamun/notebooks/triagerX/output/{output_file}.pt"
 
 wandb_config = {
