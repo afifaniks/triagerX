@@ -28,7 +28,7 @@ def dump_issues(owner, repo, gh_username, gh_token, path):
 
             comments_url = issue['comments_url']
 
-            timeline_response = requests.get(timeline_url, auth=(gh_username, gh_token))
+            timeline_response = requests.get(timeline_url)
             timeline_data = timeline_response.json()
 
             issue["timeline_data"] = timeline_data
@@ -55,5 +55,5 @@ gh_username = os.environ["GH_USERNAME"]
 path = "D:\\Triager X\\triagerX\\util\\data\\issue_data"
 
 
-users = dump_issues(owner, repo, gh_username, gh_token, path)
+dump_issues(owner, repo, gh_username, gh_token, path)
 
