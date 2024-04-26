@@ -1,79 +1,62 @@
 import os
 import json
-
 import pandas as pd
 
 
-json_root = "data/issue_data"
+class IssueExtractor:
+    def extract_issues(self, json_root):
+        all_issues = []
+        file_paths = os.listdir(json_root)
+        print(len(file_paths))
+        for file_path in file_paths:
+            with open(os.path.join(json_root, file_path), "r") as file:
+                issue = json.load(file)
+                if "/pull/" in issue["html_url"]:
+                    print("Pull data")
+                    continue
+                all_issues.append(self.extract_issue_details(issue))
 
-file_paths = os.listdir(json_root)
+        return all_issues
 
-code_contribution_events = ["referenced", "cross-referenced"]
+    def extract_issue_details(self, issue):
+        issue_dict = {
+            "issue_number": issue["number"],
+            "issue_title": issue["title"],
+            "issue_body": issue["body"],
+            "issue_url": issue["html_url"],
+            "issue_state": issue["state"],
+            "creator": issue["user"]["login"],
+            "labels": ", ".join([label["name"] for label in issue["labels"]]) if issue["labels"] else "",
+            "assignees": self.extract_assignees(issue)
+        }
+        issue_dict["component"] = self.component_split(issue_dict["labels"])
 
-all_issues = []
+        return issue_dict
 
-
-def component_split(x):
-    x_split = str(x).split(",")
-
-    for s in x_split:
-        if "comp:" in s.lower():
-            return s.strip()
-    return None
-
-
-for file_path in file_paths:
-    with open(os.path.join(json_root, file_path), "r") as file:
-        issue = json.load(file)
-
-        if "/pull/" in issue["html_url"] or issue["state"] == "open":
-            continue
-
-        print(f"Issue: {issue['html_url']}")
-
-        issue_number = issue["number"]
-        issue_title = issue["title"]
-        issue_body = issue["body"]
-        issue_url = issue["html_url"]
-        issue_state = issue["state"]
-        issue_creator = issue["user"]["login"]
-        labels = issue["labels"]
-        label_names = ", ".join([label["name"] for label in labels]) if labels else ""
-        component = component_split(label_names)
+    def extract_assignees(self, issue):
         assignees = issue["assignees"]
-        assignee_logins = (
-            [assignee["login"] for assignee in assignees] if len(assignees) > 0 else None
-        )
-
-        if assignee_logins is None:
+        if assignees:
+            return ",".join([assignee["login"] for assignee in assignees])
+        else:
             timeline = issue["timeline_data"]
             for timeline_event in timeline:
                 event = timeline_event["event"]
-
                 if event == "cross-referenced" and timeline_event["source"]["issue"].get("pull_request", None):
-                    actor = timeline_event["actor"]["login"]
-                    assignee_logins = actor
-
+                    return timeline_event["actor"]["login"]
                 if event == "referenced" and timeline_event["commit_url"]:
-                    actor = timeline_event["actor"]["login"]
-                    assignee_logins = actor
-        else:
-            assignee_logins = ",".join(assignee_logins)
+                    return timeline_event["actor"]["login"]
+        return None
 
-        issue_dict = {
-            "issue_number": issue_number,
-            "issue_url": issue_url,
-            "issue_title": issue_title,
-            "issue_body": issue_body,
-            "issue_state": issue_state,
-            "creator": issue_creator,
-            # "comments",
-            "assignees": assignee_logins,
-            "labels": label_names,
-            "component": component
-        }
+    def component_split(self, labels):
+        for label in labels.split(","):
+            if "comp:" in label.lower():
+                return label.strip()
+        return None
 
-        all_issues.append(issue_dict)
 
-df = pd.DataFrame(all_issues)
-df.to_csv("test.csv")
+json_root = "data/issue_data"
+extractor = IssueExtractor()
+issues = extractor.extract_issues(json_root=json_root)
+
+df = pd.DataFrame(issues)
+df.to_csv("test.csv", index=False)
