@@ -1,14 +1,19 @@
 import os
 import json
+import sys
+
 import pandas as pd
+from tqdm import tqdm
 
 
 class IssueExtractor:
     def extract_issues(self, json_root):
         all_issues = []
         file_paths = os.listdir(json_root)
-        print(len(file_paths))
+        progress_bar = tqdm(total=len(file_paths), desc="Processing issues", unit="files", leave=False)
         for file_path in file_paths:
+            progress_bar.update(1)
+            progress_bar.set_description(desc=f"Processing file: {file_path}")
             with open(os.path.join(json_root, file_path), "r") as file:
                 issue = json.load(file)
                 if "/pull/" in issue["html_url"]:
@@ -59,4 +64,5 @@ extractor = IssueExtractor()
 issues = extractor.extract_issues(json_root=json_root)
 
 df = pd.DataFrame(issues)
+df = df.sort_values(by="issue_number")
 df.to_csv("test.csv", index=False)
