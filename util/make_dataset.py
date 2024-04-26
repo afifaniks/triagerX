@@ -12,6 +12,16 @@ code_contribution_events = ["referenced", "cross-referenced"]
 
 all_issues = []
 
+
+def component_split(x):
+    x_split = str(x).split(",")
+
+    for s in x_split:
+        if "comp:" in s.lower():
+            return s.strip()
+    return None
+
+
 for file_path in file_paths:
     with open(os.path.join(json_root, file_path), "r") as file:
         issue = json.load(file)
@@ -29,13 +39,13 @@ for file_path in file_paths:
         issue_creator = issue["user"]["login"]
         labels = issue["labels"]
         label_names = ", ".join([label["name"] for label in labels]) if labels else ""
+        component = component_split(label_names)
         assignees = issue["assignees"]
         assignee_logins = (
             [assignee["login"] for assignee in assignees] if len(assignees) > 0 else None
         )
 
         if assignee_logins is None:
-            print("Found")
             timeline = issue["timeline_data"]
             for timeline_event in timeline:
                 event = timeline_event["event"]
@@ -60,6 +70,7 @@ for file_path in file_paths:
             # "comments",
             "assignees": assignee_logins,
             "labels": label_names,
+            "component": component
         }
 
         all_issues.append(issue_dict)
