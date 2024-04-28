@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 24:00:00
+#SBATCH -t 1-00:00:00
 #SBATCH -n 1
-#SBATCH --mem=50G
-#SBATCH --partition=disa --gres=gpu:1
+#SBATCH --mem=80G
+#SBATCH --partition=gpu-a100 --gres=gpu:1
 #SBATCH --output=%j.out
 
 source ~/miniconda3/etc/profile.d/conda.sh && \
-conda activate trx && \
-python train_sim_lbtp_deberta.py
+conda activate triagerx && \
+python /home/mdafifal.mamun/notebooks/triagerX/notebook/language_modelling/pretrain.py
