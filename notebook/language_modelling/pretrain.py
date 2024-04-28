@@ -10,8 +10,9 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from transformers import (AutoTokenizer, DataCollatorForLanguageModeling,
-                          DebertaConfig, DebertaForMaskedLM, Trainer,
-                          TrainerCallback, TrainingArguments)
+                          DebertaConfig, DebertaForMaskedLM, RobertaConfig,
+                          RobertaForMaskedLM, Trainer, TrainerCallback,
+                          TrainingArguments)
 
 import wandb
 
@@ -71,7 +72,7 @@ class CustomDataset(Dataset):
         return self.tokenizer(
             examples['text'],
             padding="max_length",
-            truncation=True,
+            truncation=True,            
             max_length=self.max_length,
             return_special_tokens_mask=True
         )
@@ -104,7 +105,7 @@ def save_text_to_file(texts, file_path):
             f.write(text + "\n")
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("tokenizer/deeptriage")
+    tokenizer = AutoTokenizer.from_pretrained("roberta-large")
     train_file = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/deeptriage/deep_data.csv"
     
     # Preprocess and tokenize texts
@@ -121,27 +122,28 @@ if __name__ == "__main__":
     test_line_dataset = CustomDataset(tokenizer, test_dataset, 512)
 
     logger.info("Loading base model...")
-    config = DebertaConfig.from_pretrained("microsoft/deberta-large")
+    config = RobertaConfig.from_pretrained("roberta-large")
     config.num_hidden_layers = 6
 
-    model = DebertaForMaskedLM(config)
+    model = RobertaForMaskedLM(config)
 
     wandb.init(
         project="deberta-pretraining",
-        name=f"deberta_{config.num_hidden_layers}_1024_10000steps"
+        name=f"roberta_{config.num_hidden_layers}_1024_10000steps"
     )
     # Define training arguments
     training_args = TrainingArguments(
-        output_dir="./model",
+        output_dir="./roberta-mlm-full",
         overwrite_output_dir=True,
         learning_rate=1e-5,
-        per_device_train_batch_size=25,
-        per_device_eval_batch_size=25,
+        per_device_train_batch_size=15,
+        per_device_eval_batch_size=15,
         max_steps=10000,
-        eval_steps=10,
+        eval_steps=100,
         weight_decay=0.01,
         evaluation_strategy="steps",
-        warmup_steps=500,
+        warmup_ratio=0.1,
+        logging_steps=5,
         save_strategy="steps",
         report_to="wandb",
         load_best_model_at_end=True,
