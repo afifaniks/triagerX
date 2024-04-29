@@ -46,7 +46,7 @@ class F1CELoss(nn.Module):
         self._beta = beta
 
     def forward(self, predictions, y_true):
-        loss = 0
+        total_loss = 0
 
         for i in range(len(predictions)):
             y_pred = predictions[i]
@@ -73,9 +73,10 @@ class F1CELoss(nn.Module):
             # Average F1 scores across all classes
             mean_f1_score = f1_score.mean()
 
-            loss += (1 - mean_f1_score) + ce_loss        
+            loss = ((self._beta * ce_loss) + ((1 - mean_f1_score) * (1-self._beta)))
+            total_loss += loss
 
-        return loss
+        return total_loss
     
 
 class CombinedLoss(nn.Module):
