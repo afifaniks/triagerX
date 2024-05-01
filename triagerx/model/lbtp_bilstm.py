@@ -89,9 +89,9 @@ class LBTPBiLSTM(nn.Module):
             # Concatanating outputs of the conv block of different filter sizes
             x = torch.cat(x, dim=1)
             x = self.dropout(x)
-            x = self.lstm(x.unsqueeze(1))
+            x, _ = self.lstm[i](x.unsqueeze(1))
             x = self.dropout(x)
-            x = self.classifiers[i](x) * self.classifier_weights[i]
+            x = self.classifiers[i](x[:, -1, :]) * self.classifier_weights[i]
 
             outputs.append(x)
 
