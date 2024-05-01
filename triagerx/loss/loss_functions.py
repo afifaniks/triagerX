@@ -73,10 +73,11 @@ class F1CELoss(nn.Module):
             # Average F1 scores across all classes
             mean_f1_score = f1_score.mean()
 
+            # Make sure losses are in scale of 0...1
             loss = ((self._beta * ce_loss) + ((1 - mean_f1_score) * (1-self._beta)))
             total_loss += loss
 
-        return total_loss
+        return total_loss # You can take a mean
     
 
 class CombinedLoss(nn.Module):
@@ -92,5 +93,47 @@ class CombinedLoss(nn.Module):
 
         for i in range(len(prediction)):
             loss += self._ce(prediction[i], labels)
+
+        return loss
+    
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2, alpha=None, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = reduction
+
+    def forward(self, input, target):
+        ce_loss = F.cross_entropy(input, target, reduction='none')
+        pt = torch.exp(-ce_loss)
+        focal_loss = (1 - pt) ** self.gamma * ce_loss
+
+        if self.alpha is not None:
+            if self.alpha.type() != input.data.type():
+                self.alpha = self.alpha.type_as(input.data)
+            focal_loss = focal_loss * self.alpha
+
+        if self.reduction == 'mean':
+            return torch.mean(focal_loss)
+        elif self.reduction == 'sum':
+            return torch.sum(focal_loss)
+        else:
+            return focal_loss
+        
+
+class CombinedFocalLoss(nn.Module):
+    def __init__(self, reduction='mean') -> None:
+        super().__init__()
+        self._fl = FocalLoss(reduction=reduction)
+    def forward(
+        self,
+        prediction,
+        labels
+    ) -> torch.Tensor:
+        loss = 0
+
+        for i in range(len(prediction)):
+            loss += self._fl(prediction[i], labels)
 
         return loss
