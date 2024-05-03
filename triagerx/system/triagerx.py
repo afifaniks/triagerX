@@ -68,6 +68,7 @@ class TriagerX:
         predicted_developers_name = [self._id2developer_map[idx] for idx in predicted_devs]
         logger.info(f"Recommended developers: {predicted_developers_name}")
 
+        logger.debug(f"Generating recommendation by similarity...")
         dev_predictions_by_similarity = self._get_recommendation_by_similarity(
             issue, 
             predicted_components, 
@@ -75,11 +76,17 @@ class TriagerX:
             k_issue=k_rank, 
             similarity_threshold=similarity_threshold
         )
+        similar_issue_devs = [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
+        logger.info(f"Recommended developers by issue similarity: {similar_issue_devs}")
 
+        logger.debug(f"Aggregating ranking...")
         rank_lists = [
             predicted_developers_name,
-            [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
+            similar_issue_devs
         ]
+
+        aggregated_rank = self._aggregate_rank(rank_lists)[:k_dev]
+        logger.info(f"Recommended developers by ranking aggregation: {aggregated_rank}")
 
         recommendations = {
             "predicted_components": predicted_components_name,
@@ -87,7 +94,7 @@ class TriagerX:
             "predicted_developers": predicted_developers_name[:k_dev],
             "dev_prediction_score": dev_prediction_score,
             "similar_devs": dev_predictions_by_similarity,
-            "combined_ranking": self._aggregate_rank(rank_lists)[:k_dev]            
+            "combined_ranking": aggregated_rank         
         }
 
         return recommendations
