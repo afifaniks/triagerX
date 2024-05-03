@@ -50,6 +50,7 @@ class TriagerX:
         self._id2component_map = {idx: comp for comp, idx in component_id_map.items()}
         self._component_developers_map = component_developers_map
         self._expected_developers =  [user for user_list in self._component_developers_map.values() for user in user_list]
+        logger.debug(f"Using device: {device}")
         logger.debug("Generating embedding for existing issues...")
         self._all_embeddings = similarity_model.encode(self._train_data.raw_text.to_list(), batch_size=15)        
 
