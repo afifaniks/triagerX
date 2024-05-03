@@ -170,7 +170,7 @@ class TriagerX:
 
     def _get_historical_contributors(self, similar_issues, predicted_component_ids):
         user_contribution_counts = {}
-        skipped_users = []
+        skipped_users = set()
 
         for issue_index, sim_score in similar_issues:
             base_points = sim_score
@@ -187,7 +187,7 @@ class TriagerX:
             for key, users in contributors.items():
                 for user in users:
                     if user not in self._expected_developers:
-                        skipped_users.append(user)                        
+                        skipped_users.add(user)                        
                         continue            
                                 
                     if user in self._component_developers_map[issue.component]:
