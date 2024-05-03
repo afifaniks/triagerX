@@ -3,12 +3,12 @@ import os
 import re
 from typing import Any, Dict, List
 
-from loguru import logger
 import pandas as pd
 import torch
 import torch.nn as nn
-from transformers import PreTrainedTokenizer
+from loguru import logger
 from sentence_transformers import SentenceTransformer, util
+from transformers import PreTrainedTokenizer
 
 
 class TriagerX:
@@ -39,22 +39,42 @@ class TriagerX:
         }
         self._issues_path = issues_path
         self._all_issues = os.listdir(self._issues_path)
-        self._developer_id_map = developer_id_map
-        self._component_id_map = component_id_map
+        self._developer2id_map = developer_id_map
+        self._component2id_map = component_id_map
+        self._id2developer_map = {idx: dev for dev, idx in developer_id_map.items()}
+        self._id2component_map = {idx: comp for comp, idx in component_id_map.items()}
         self._expected_deveopers = expected_deveopers
         logger.debug("Generating embedding for training data...")
-        self._all_embeddings = similarity_model.encode(self._train_data.text.to_list(), batch_size=15)
+        self._all_embeddings = similarity_model.encode(self._train_data.raw_text.to_list(), batch_size=15)
 
     def get_recommendation(self, issue, k=3):
-        processed_issue = self._process_issues(issue=issue)
-        component_predictions = self._get_predicted_components(tokenized_issue=processed_issue, k=k)
-        dev_predictions = self._get_recommendation_from_dev_model(tokenized_issue=processed_issue, k=k)
+        logger.debug("Processing issue...")
+        cleaned_issue = self._clean_data(issue_data=issue)
+        processed_issue = self._process_issues(issue=cleaned_issue)
+
+        logger.debug("Prediciting components...")
+        comp_prediction_score, predicted_components = self._get_predicted_components(tokenized_issue=processed_issue, k=k)
+        print(predicted_components)
+        predicted_components = predicted_components.squeeze(dim=0).cpu().numpy().tolist()
+        predicted_components_name = [self._id2component_map[idx] for idx in predicted_components]
+        logger.info(f"Predicted components: {predicted_components_name}")
+
+        logger.debug("Generating developer recommendation...")
+        dev_prediction_score, predicted_devs = self._get_recommendation_from_dev_model(tokenized_issue=processed_issue, k=5)
+        predicted_devs = predicted_devs.squeeze(dim=0).cpu().numpy().tolist()
+        dev_prediction_score = dev_prediction_score.squeeze(dim=0).cpu()
+        predicted_developers_name = [self._id2developer_map[idx] for idx in predicted_devs]
+        logger.info(f"Recommended developers: {predicted_developers_name}\nSoftmax: {dev_prediction_score}")
+
         dev_predictions_by_similarity = self._get_recommendation_by_similarity(
             issue, 
-            component_predictions.cpu().numpy().tolist()
+            predicted_components, 
+            k_dev=5, 
+            k_issue=10, 
+            similarity_threshold=0.5
         )
 
-        return dev_predictions, component_predictions
+        return predicted_devs, dev_predictions_by_similarity, predicted_components_name
 
     def _process_issues(self, issue: str):
         return self._tokenizer(
@@ -74,6 +94,7 @@ class TriagerX:
             )
 
         output = torch.sum(torch.stack(predictions), 0)
+        
         return output.topk(k, 1, True, True)
     
     def _get_predicted_components(self, tokenized_issue, k):
@@ -87,16 +108,18 @@ class TriagerX:
         output = torch.sum(torch.stack(predictions), 0)
         return output.topk(k, 1, True, True)
     
-    def _get_recommendation_by_similarity(self, issue, predicted_components):
-        similar_issues = self._get_top_k_similar_issues(issue)
+    def _get_recommendation_by_similarity(self, issue, predicted_components, k_dev, k_issue, similarity_threshold):
+        similar_issues = self._get_top_k_similar_issues(issue, k=k_issue, threshold=similarity_threshold)
         historical_contribution = self._get_historical_contributors(
             similar_issues=similar_issues, 
             predicted_component_ids=predicted_components
         )
 
-        top_3_devs = [contrib[0] for contrib in historical_contribution[:3]]
+        logger.debug(historical_contribution)
 
-        return top_3_devs
+        top_k_devs = [contrib[0] for contrib in historical_contribution[:k_dev]]
+
+        return top_k_devs
 
     def _get_historical_contributors(self, similar_issues, predicted_component_ids):
         user_contribution_counts = {}
@@ -109,9 +132,8 @@ class TriagerX:
 
             # print(f"Issue label: {label2idx[issue.component]} -- Predicted: {predicted_component_ids}")
 
-            if self._component_id_map[issue.component] not in predicted_component_ids:
-                logger.warning(f"Skipping issue as label id {self._component_id_map[issue.component]} 
-                               did not match with any of {predicted_component_ids}")
+            if self._component2id_map[issue.component] not in predicted_component_ids:
+                logger.warning(f"Skipping issue as label id {self._component2id_map[issue.component]} did not match with any of {predicted_component_ids}")
                 continue
 
             issue_number = issue.issue_number
@@ -179,7 +201,7 @@ class TriagerX:
 
         return contributions
     
-    def _get_top_k_similar_issues(self, issue, k=5, threshold=0.5):
+    def _get_top_k_similar_issues(self, issue, k, threshold):
         test_embed = self._similarity_model.encode(issue)
         cos = util.cos_sim(test_embed, self._all_embeddings)
         
