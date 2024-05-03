@@ -1,13 +1,14 @@
 import json
 import os
 import re
-from typing import Any, Dict, List
+from collections import defaultdict
+from typing import Dict, List
 
 import pandas as pd
 import torch
 import torch.nn as nn
 from loguru import logger
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import util
 from transformers import PreTrainedTokenizer
 
 
@@ -52,7 +53,7 @@ class TriagerX:
         logger.debug("Generating embedding for existing issues...")
         self._all_embeddings = similarity_model.encode(self._train_data.raw_text.to_list(), batch_size=15)        
 
-    def get_recommendation(self, issue, k_comp=3, k_dev=5):
+    def get_recommendation(self, issue, k_comp, k_dev, k_rank, similarity_threshold):
         logger.debug("Processing issue...")
         cleaned_issue = self._clean_data(issue_data=issue)
         processed_issue = self._process_issues(issue=cleaned_issue)
@@ -63,28 +64,46 @@ class TriagerX:
         logger.info(f"Predicted components: {predicted_components_name}")
 
         logger.debug("Generating developer recommendation...")
-        dev_prediction_score, predicted_devs = self._get_recommendation_from_dev_model(tokenized_issue=processed_issue, k=k_dev)
+        dev_prediction_score, predicted_devs = self._get_recommendation_from_dev_model(tokenized_issue=processed_issue, k=k_rank)
         predicted_developers_name = [self._id2developer_map[idx] for idx in predicted_devs]
-        logger.info(f"Recommended developers: {predicted_developers_name}\nSoftmax: {dev_prediction_score}")
+        logger.info(f"Recommended developers: {predicted_developers_name}")
 
         dev_predictions_by_similarity = self._get_recommendation_by_similarity(
             issue, 
             predicted_components, 
-            k_dev=k_dev, 
-            k_issue=10, 
-            similarity_threshold=0.5
+            k_dev=k_rank, 
+            k_issue=k_rank, 
+            similarity_threshold=similarity_threshold
         )
+
+        rank_lists = [
+            predicted_developers_name,
+            [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
+        ]
 
         recommendations = {
             "predicted_components": predicted_components_name,
             "comp_prediction_score": comp_prediction_score,
-            "predicted_developers": predicted_developers_name,
-            "comp_prediction_score": dev_prediction_score,
-            "similar_devs": dev_predictions_by_similarity
-            
+            "predicted_developers": predicted_developers_name[:k_dev],
+            "dev_prediction_score": dev_prediction_score,
+            "similar_devs": dev_predictions_by_similarity,
+            "combined_ranking": self._aggregate_rank(rank_lists)[:k_dev]            
         }
 
         return recommendations
+    
+    def _aggregate_rank(self, rank_lists):
+        borda_scores = defaultdict(int)
+        
+        for rank_list in rank_lists:
+            # Assign Borda scores to items based on their rank in each list
+            for i, item in enumerate(rank_list):
+                borda_scores[item] += len(rank_list) - i
+        
+        sorted_items = sorted(borda_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        return [item[0] for item in sorted_items]
+    
 
     def _process_issues(self, issue: str):
         return self._tokenizer(
@@ -168,7 +187,8 @@ class TriagerX:
                     else:
                         user_contribution_counts[user] = user_contribution_counts.get(user, 0) + base_points
             
-        logger.warning(f"Skipped users: {skipped_users} because they don't exist in the ${{expected_developers}} list")
+        if len(skipped_users) > 0:
+            logger.warning(f"Skipped users: {skipped_users} because they don't exist in the ${{expected_developers}} list")
         
         user_contribution_counts = sorted(user_contribution_counts.items(), key=lambda x: x[1], reverse=True)
         return user_contribution_counts
@@ -200,10 +220,12 @@ class TriagerX:
                     if event == "cross-referenced" and timeline_event["source"]["issue"].get("pull_request", None):
                         actor = timeline_event["actor"]["login"]
                         pull_requests.append(actor)
+                        pull_requests.append(actor)
                         last_assignment = actor
 
                     if event == "referenced" and timeline_event["commit_url"]:
                         actor = timeline_event["actor"]["login"]
+                        commits.append(actor)
                         commits.append(actor)
                         last_assignment = actor
 
