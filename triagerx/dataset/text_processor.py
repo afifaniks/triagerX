@@ -56,3 +56,12 @@ class TextProcessor:
                 return s.strip()
         
         return None
+    
+    @staticmethod
+    def clean_summary(summary: str) -> str:
+        summary = str(summary)
+        summary = re.sub("Here is a summar.*?:", "", summary)
+        summary = re.sub("\s+", " ", summary)
+        summary = summary.strip()
+
+        return summary
