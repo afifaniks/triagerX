@@ -3,8 +3,8 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-INPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_train.csv"
-OUTPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_train_summarized.csv"
+INPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/openj9_processed.csv"
+OUTPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_all_summarized.csv"
 
 print("Loading Llama3 pipeline...")
 model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
@@ -57,12 +57,10 @@ df = pd.read_csv(INPUT_DATA)
 print("Generating summaries...")
 summaries = []
 for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing issue"):
-    text = f"Bug Title: {row.issue_title}\nBug Description: {row.description}"
+    text = f"Bug Title: {row.issue_title}\nBug Description: {row.issue_body}"
     sumamry = get_summary(text)
     sumamry = sumamry.replace("\n\n", "\n")
     summaries.append(sumamry)
-
-
 
 df["summary"] = summaries
 df.to_csv(OUTPUT_DATA)
