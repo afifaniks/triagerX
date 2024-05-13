@@ -99,7 +99,7 @@ df = prepare_dataframe(raw_df)
 df = df.sort_values(by="issue_number")
 
 num_issues = len(df)
-logger.info(f"Total number of issues after cleaning: {num_issues}")
+logger.info(f"Total number of issues after processing: {num_issues}")
 
 
 logger.debug("Filtering dataset by targetted components...")
