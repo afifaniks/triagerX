@@ -15,6 +15,7 @@ class TextProcessor:
 
     @staticmethod
     def clean_text(text: str) -> str:
+        text = str(text) # In case, there is nan or something else
         cleaned_text = text.strip()
         special_tokens = TextProcessor.SPECIAL_TOKENS
         
@@ -45,3 +46,13 @@ class TextProcessor:
         
 
         return cleaned_text
+    
+    @staticmethod
+    def component_split(x: str):
+        x_split = str(x).split(",")
+
+        for s in x_split:
+            if "comp:" in s.lower():
+                return s.strip()
+        
+        return None
