@@ -38,6 +38,7 @@ with open(args.config, 'r') as stream:
 
 # Set each field from the YAML config
 use_special_tokens = config.get('use_special_tokens')
+use_summary = config.get('use_summary')
 dataset_path = config.get('dataset_path')
 target_components = config.get('target_components')
 base_transformer_model = config.get('base_transformer_model')
@@ -51,7 +52,7 @@ epochs = config.get('epochs')
 batch_size = config.get('batch_size')
 early_stopping_patience = config.get('early_stopping_patience')
 topk_indices = config.get('topk_indices')
-run_name = config.get('run_name')
+run_name = config.get('run_name') + f"_seed{seed}"
 weights_save_location = config.get('weights_save_location')
 test_report_location = config.get('test_report_location')
 device = ("cuda" if torch.cuda.is_available() else "cpu")
@@ -82,13 +83,24 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     if use_special_tokens:
         df["description"] = df["description"].progress_apply(TextProcessor.clean_text)
 
-    df["text"] = df.progress_apply(
-        lambda x: "Bug Title: "
-        + str(x["issue_title"])
-        + "\nBug Description: "
-        + str(x["description"]),
-        axis=1,
-    ) # type: ignore
+    if use_summary:
+        df["text"] = df.progress_apply(
+            lambda x: "Bug Title: "
+            + str(x["issue_title"])
+            + "Bug Summary: "
+            + str(x["summary"])
+            + "\nBug Description: "
+            + str(x["description"]),
+            axis=1,
+        ) # type: ignore
+    else:
+        df["text"] = df.progress_apply(
+            lambda x: "Bug Title: "
+            + str(x["issue_title"])
+            + "\nBug Description: "
+            + str(x["description"]),
+            axis=1,
+        ) # type: ignore
     
     min_length = 15
     df = df[df["text"].str.len().gt(min_length)]

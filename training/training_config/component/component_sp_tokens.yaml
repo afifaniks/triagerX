@@ -1,4 +1,5 @@
 use_special_tokens: true
+use_summary: false
 dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/openj9_processed.csv"
 target_components:
   - "comp:vm"
