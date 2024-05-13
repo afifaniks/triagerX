@@ -11,22 +11,23 @@ class TriageDataset(Dataset):
         self,
         df: pd.DataFrame,
         tokenizer: PreTrainedTokenizer,
-        feature: str = "text",
-        target: str = "owner_id",
+        feature: str,
+        target: str,
     ):
         logger.debug("Generating torch dataset...")
+        logger.debug(f"Dataset feature column: {feature}, target column: {target}")
         self.tokenizer = tokenizer
         self.labels = [label for label in df[target]]
         logger.debug("Tokenizing texts...")
         self.texts = [
-            self.tokenizer(
-                text,
+            (row[feature], self.tokenizer(
+                row[feature],
                 padding="max_length",
                 max_length=512,
                 truncation=True,
                 return_tensors="pt",
-            )
-            for text in df[feature]
+            ))
+            for _, row in df.iterrows()
         ]
 
     def classes(self):
