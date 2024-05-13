@@ -30,6 +30,7 @@ tqdm.pandas()
 
 parser = argparse.ArgumentParser(description='Training script arguments')
 parser.add_argument('--config', type=str, required=True, help='Path to training config file')
+parser.add_argument('--seed', type=int, required=True, help='Random seed')
 args = parser.parse_args()
 
 logger.debug(f"Loading training configuration from: {args.config}")
@@ -43,7 +44,7 @@ dataset_path = config.get('dataset_path')
 target_components = config.get('target_components')
 base_transformer_model = config.get('base_transformer_model')
 unfrozen_layers = config.get('unfrozen_layers')
-seed = config.get('seed')
+seed = args.seed
 val_size = config.get('val_size')
 test_size = config.get('test_size')
 dropout = config.get('dropout')
@@ -53,8 +54,8 @@ batch_size = config.get('batch_size')
 early_stopping_patience = config.get('early_stopping_patience')
 topk_indices = config.get('topk_indices')
 run_name = config.get('run_name') + f"_seed{seed}"
-weights_save_location = config.get('weights_save_location')
-test_report_location = config.get('test_report_location')
+weights_save_location = config.get('weights_save_location') + f"_seed{seed}.pt"
+test_report_location = config.get('test_report_location') + f"_seed{seed}.pt"
 device = ("cuda" if torch.cuda.is_available() else "cpu")
 wandb_config = {
     "project": config.get('wandb_project', "openj9-component"), 
