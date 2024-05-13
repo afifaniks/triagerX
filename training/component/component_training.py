@@ -75,8 +75,6 @@ raw_df = raw_df.rename(columns={"assignees": "owner", "issue_body": "description
 
 def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df["labels"].notna()]
-    print(f"All issues: {len(df)}")
-    print(f"Excluding pull: {len(df)}")
     df = df[~df["issue_url"].str.contains("/pull/")]
     
     df["component"] = df["labels"].apply(TextProcessor.component_split)
