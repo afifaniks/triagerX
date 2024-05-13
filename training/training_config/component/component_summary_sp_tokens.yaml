@@ -1,6 +1,7 @@
 use_special_tokens: true
+use_description: false
 use_summary: true
-dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/openj9_processed.csv"
+dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_all_summarized.csv"
 target_components:
   - "comp:vm"
   - "comp:jvmti"
@@ -18,9 +19,9 @@ epochs: 50
 batch_size: 10
 early_stopping_patience: 10
 topk_indices: 3
-run_name: "comp_sp_tokens_LBTPDeberta_u5_6_classes"
-weights_save_location: "/work/disa_lab/projects/triagerx/models/comp_sp_tokens_LBTPDeberta_u5_6_classes"
-test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/reports/classification_report_comp_sp_tokens_LBTPDeberta_u5_6_classes"
+run_name: "comp_summary_sp_tokens_LBTPDeberta_u5_6_classes"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-component"
 architecture: "LBTP-Deberta"
 dataset: "Openj9 Issues"

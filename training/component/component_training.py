@@ -1,3 +1,4 @@
+import os
 import sys
 
 sys.path.append('/home/mdafifal.mamun/notebooks/triagerX')
@@ -40,6 +41,7 @@ with open(args.config, 'r') as stream:
 # Set each field from the YAML config
 use_special_tokens = config.get('use_special_tokens')
 use_summary = config.get('use_summary')
+use_description = config.get('use_description')
 dataset_path = config.get('dataset_path')
 target_components = config.get('target_components')
 base_transformer_model = config.get('base_transformer_model')
@@ -54,8 +56,8 @@ batch_size = config.get('batch_size')
 early_stopping_patience = config.get('early_stopping_patience')
 topk_indices = config.get('topk_indices')
 run_name = config.get('run_name') + f"_seed{seed}"
-weights_save_location = config.get('weights_save_location') + f"_seed{seed}.pt"
-test_report_location = config.get('test_report_location') + f"_seed{seed}.pt"
+weights_save_location = os.path.join(config.get('weights_save_location'), f"{run_name}.pt")
+test_report_location = os.path.join(config.get('test_report_location'), f"classification_report_{run_name}.json")
 device = ("cuda" if torch.cuda.is_available() else "cpu")
 wandb_config = {
     "project": config.get('wandb_project', "openj9-component"), 
@@ -71,7 +73,12 @@ wandb_config = {
 log_manager = EpochLogManager(wandb_config)
 
 raw_df = pd.read_csv(dataset_path)
+
+logger.debug(f"Selected compute device: {device}")
+logger.debug(f"Weights will be saved in: {weights_save_location}")
+logger.debug(f"Classification reports will be saved in: {test_report_location}")
 logger.debug(f"Raw dataset size: {len(raw_df)}")
+
 raw_df = raw_df.rename(columns={"assignees": "owner", "issue_body": "description"})
     
 
@@ -80,24 +87,29 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df[~df["issue_url"].str.contains("/pull/")]
     
     df["component"] = df["labels"].apply(TextProcessor.component_split)
+
+    df["text"] = df["issue_title"].progress_apply(
+            lambda x: "Bug Title: " + str(x),
+        ) # type: ignore
     
     if use_special_tokens:
+        logger.info("Adding special tokens...")
         df["description"] = df["description"].progress_apply(TextProcessor.clean_text)
 
     if use_summary:
+        logger.info("Adding summary...")
+        df["summary"] = df["summary"].progress_apply(TextProcessor.clean_summary)
         df["text"] = df.progress_apply(
-            lambda x: "Bug Title: "
-            + str(x["issue_title"])
-            + "Bug Summary: "
-            + str(x["summary"])
-            + "\nBug Description: "
-            + str(x["description"]),
-            axis=1,
+            lambda x: x["text"]
+            + "\nBug Summary: "
+            + str(x["summary"]),
+            axis=1
         ) # type: ignore
-    else:
+
+    if use_description:
+        logger.info("Adding description...")
         df["text"] = df.progress_apply(
-            lambda x: "Bug Title: "
-            + str(x["issue_title"])
+            lambda x: x["text"]
             + "\nBug Description: "
             + str(x["description"]),
             axis=1,
