@@ -94,7 +94,7 @@ def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     
     if use_special_tokens:
         logger.info("Adding special tokens...")
-        df["description"] = df["description"].progress_apply(TextProcessor.clean_text)
+        df["description"] = df["description"].progress_apply(TextProcessor.process_special_tokens)
 
     if use_summary:
         logger.info("Adding summary...")

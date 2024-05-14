@@ -14,7 +14,7 @@ class TextProcessor:
     }
 
     @staticmethod
-    def clean_text(text: str) -> str:
+    def process_special_tokens(text: str) -> str:
         text = str(text) # In case, there is nan or something else
         cleaned_text = text.strip()
         special_tokens = TextProcessor.SPECIAL_TOKENS
