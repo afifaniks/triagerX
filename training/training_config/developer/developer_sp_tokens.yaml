@@ -12,7 +12,7 @@ epochs: 50
 batch_size: 10
 early_stopping_patience: 10
 topk_indices: 3
-run_name: "dev_sp_tokens_LBTPDeberta_u5_6_classes"
+run_name: "dev_sp_tokens_LBTPDeberta_u5_16_classes"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
