@@ -1,8 +1,7 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from loguru import logger
 from torch.utils.data import Dataset
-
 from transformers import PreTrainedTokenizer
 
 
@@ -20,13 +19,13 @@ class TriageDataset(Dataset):
         self.labels = [label for label in df[target]]
         logger.debug("Tokenizing texts...")
         self.texts = [
-            (row[feature], self.tokenizer(
+            self.tokenizer(
                 row[feature],
                 padding="max_length",
                 max_length=512,
                 truncation=True,
                 return_tensors="pt",
-            ))
+            )
             for _, row in df.iterrows()
         ]
 
