@@ -1,0 +1,20 @@
+use_special_tokens: true
+use_description: true
+use_summary: false
+dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/df_all_summarized.csv"
+base_transformer_model: "microsoft/deberta-large"
+unfrozen_layers: 5
+val_size: 0.2
+test_size: 0.2
+dropout: 0.2
+learning_rate: 0.0001
+epochs: 50
+batch_size: 10
+early_stopping_patience: 10
+topk_indices: 3
+run_name: "dev_summary_sp_tokens_LBTPDeberta_u5_6_classes"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+wandb_project: "openj9-developers"
+architecture: "LBTP-Deberta"
+dataset: "Openj9 Issues"
