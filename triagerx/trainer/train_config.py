@@ -1,24 +1,28 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
-import pandas as pd
 from pydantic import BaseModel
 from torch import nn
 from torch.optim import Optimizer
-from torch.utils.data.sampler import Sampler
+from torch.utils.data import DataLoader
+
+from util.epoch_log_manager import EpochLogManager
 
 
 class TrainConfig(BaseModel):
+    model: nn.Module
+    train_dataloader: DataLoader
+    validation_dataloader: DataLoader
     optimizer: Optimizer
     criterion: nn.Module
-    train_dataset: pd.DataFrame
-    validation_dataset: pd.DataFrame
     learning_rate: float
     batch_size: int
     epochs: int
-    output_file: str
+    output_path: str
+    device: str
+    topk_indices: int
+    log_manager: EpochLogManager
+    early_stopping_patience: Optional[int] = None
     scheduler: Optional[Any] = None
-    sampler: Optional[Sampler] = None
-    wandb: Optional[Dict] = None
 
     class Config:
         arbitrary_types_allowed = True
