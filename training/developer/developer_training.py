@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import sys
 
@@ -45,7 +44,6 @@ use_special_tokens = config.get("use_special_tokens")
 use_summary = config.get("use_summary")
 use_description = config.get("use_description")
 dataset_path = config.get("dataset_path")
-target_components = config.get("target_components")
 base_transformer_model = config.get("base_transformer_model")
 unfrozen_layers = config.get("unfrozen_layers")
 seed = args.seed
@@ -182,14 +180,24 @@ class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))
 weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
-logger.debug("Loading pre-trained model...")
+logger.debug("Modeling network...")
 model = LBTPDeberta(
     len(df_train.owner_id.unique()),
     unfrozen_layers=unfrozen_layers,
     dropout=dropout,
     base_model=base_transformer_model,
 )
+criterion = CombinedLoss()
 tokenizer = model.tokenizer()
+
+if use_special_tokens:
+    special_tokens = TextProcessor.SPECIAL_TOKENS
+    logger.debug("Resizing model embedding for new special tokens...")
+    special_tokens_dict = {"additional_special_tokens": list(special_tokens.values())}
+    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
+    model.base_model.resize_token_embeddings(len(tokenizer))
+
+optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
 train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id")
@@ -204,8 +212,6 @@ train_dataloader = DataLoader(
 val_dataloader = DataLoader(val_ds, batch_size=batch_size)
 
 logger.debug("Configuring training parameters...")
-criterion = CombinedLoss()
-optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 total_steps = len(train_dataloader) * epochs
 warmup_steps = int(0.1 * total_steps)

@@ -55,11 +55,14 @@ class ModelTrainer:
             if early_stopping:
                 early_stopping(val_loss=total_loss_val)
                 if early_stopping.early_stop:
-                    logger.debug("Early stopping...")
+                    logger.debug(
+                        f"Validation loss did not improve for {early_stopping.patience} epochs. Early stopping..."
+                    )
                     break
-            elif total_loss_val < best_loss:
+
+            if total_loss_val < best_loss:
                 best_loss = total_loss_val
-                logger.debug("New loss value found. Saving checkpoint...")
+                logger.info("New loss value found. Saving checkpoint...")
                 self.save_checkpoint(model, self._config.output_path)
 
             if scheduler:
