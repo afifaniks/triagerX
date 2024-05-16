@@ -74,7 +74,9 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-log_manager = EpochLogManager(None)
+
+log_manager = EpochLogManager(wandb_config)
+torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
 
@@ -137,7 +139,7 @@ logger.info(f"Total issues after developer filtering: {len(df)}")
 
 df = df.sort_values(by="issue_number")
 
-df_train, df_test = train_test_split(df, test_size=test_size)
+df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
 sample_threshold = 10
 developers = df_train["owner"].value_counts()
