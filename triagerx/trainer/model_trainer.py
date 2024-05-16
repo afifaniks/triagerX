@@ -63,7 +63,7 @@ class ModelTrainer:
             if total_loss_val < best_loss:
                 best_loss = total_loss_val
                 logger.success(
-                    "Validation loss decreased, saving chekpoint to {self._config.output_path}..."
+                    f"Validation loss decreased, saving chekpoint to {self._config.output_path}..."
                 )
                 self.save_checkpoint(model, self._config.output_path)
 
