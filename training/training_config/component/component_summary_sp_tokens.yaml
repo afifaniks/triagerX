@@ -1,5 +1,5 @@
 use_special_tokens: true
-use_description: false
+use_description: true
 use_summary: true
 dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_all_summarized.csv"
 target_components:

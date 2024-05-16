@@ -4,8 +4,8 @@ use_summary: false
 dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/df_all_summarized.csv"
 base_transformer_model: "microsoft/deberta-large"
 unfrozen_layers: 4
-val_size: 0.1
-test_size: 0.1
+val_size: 0.2
+test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
 epochs: 50
