@@ -14,16 +14,15 @@ from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
 
-from triagerx.trainer.model_evaluator import ModelEvaluator
-from triagerx.trainer.model_trainer import ModelTrainer
-from triagerx.trainer.train_config import TrainConfig
-
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.dataset.triage_dataset import TriageDataset
 from triagerx.loss.loss_functions import *
 from triagerx.model.lbt_p_deberta import LBTPDeberta
+from triagerx.trainer.model_evaluator import ModelEvaluator
+from triagerx.trainer.model_trainer import ModelTrainer
+from triagerx.trainer.train_config import TrainConfig
 from util.epoch_log_manager import EpochLogManager
 
 tqdm.pandas()
