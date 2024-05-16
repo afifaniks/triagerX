@@ -62,12 +62,10 @@ class ModelTrainer:
 
             if total_loss_val < best_loss:
                 best_loss = total_loss_val
-                logger.info("New loss value found. Saving checkpoint...")
+                logger.success(
+                    "Validation loss decreased, saving chekpoint to {self._config.output_path}..."
+                )
                 self.save_checkpoint(model, self._config.output_path)
-
-            if scheduler:
-                scheduler.step(total_loss_val)
-                logger.debug(f"Current lr: {scheduler.get_last_lr()}")
 
     def _train_one_epoch(self, model, dataloader, criterion, optimizer, scheduler):
         total_acc_train = 0
@@ -149,5 +147,4 @@ class ModelTrainer:
         return total_acc_val, total_loss_val, precision, recall, f1_score, topk
 
     def save_checkpoint(self, model, output_path):
-        logger.success("Validation loss decreased, saving model...")
         torch.save(model.state_dict(), output_path)
