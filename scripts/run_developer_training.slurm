@@ -1,20 +1,29 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 0-10:00:00
+#SBATCH -t 0-12:00:00
 #SBATCH -n 1
 #SBATCH --mem=80G
-#SBATCH --partition=gpu-a100 --gres=gpu:1
+#SBATCH --partition=disa --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/%j.out
 
-source ~/miniconda3/etc/profile.d/conda.sh && \
-conda activate triagerx && \
-python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/developer_sp_tokens.yaml --seed 41
+# Activate conda environment
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate triagerx
 
-source ~/miniconda3/etc/profile.d/conda.sh && \
-conda activate triagerx && \
-python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/developer_summary_description.yaml --seed 41
+# Array of configuration files
+configs=(
+    "developer_raw_data.yaml"
+    "developer_summary_sp_tokens.yaml"
+    "developer_sp_tokens.yaml"
+    "developer_summary_description.yaml"
+)
 
-source ~/miniconda3/etc/profile.d/conda.sh && \
-conda activate triagerx && \
-python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/developer_summary_sp_tokens.yaml --seed 41
+# Array of seeds
+seeds=(66)
 
+# Loop through each seed and config combination
+for seed in "${seeds[@]}"; do
+    for config in "${configs[@]}"; do
+        python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/$config --seed $seed
+    done
+done
