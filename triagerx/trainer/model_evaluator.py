@@ -20,8 +20,9 @@ class ModelEvaluator:
         weights_save_location: str,
         test_report_location: str,
     ):
+        model = model.to(device)
         model.eval()
-        correct_top_k_wo_sim = 0
+        correct_top_k = 0
         all_preds = []
         all_labels = []
 
@@ -37,7 +38,7 @@ class ModelEvaluator:
 
                 _, top_k_wo_sim = output.topk(topk_index, 1, True, True)
                 top_k_wo_sim = top_k_wo_sim.t()
-                correct_top_k_wo_sim += (
+                correct_top_k += (
                     top_k_wo_sim.eq(test_label.view(1, -1).expand_as(top_k_wo_sim))
                     .sum()
                     .item()
@@ -46,8 +47,10 @@ class ModelEvaluator:
                 all_preds.append(output.argmax(dim=1).cpu().numpy())
                 all_labels.append(test_label.cpu().numpy())
 
+        topk_acc = correct_top_k / len(dataloader.dataset)
+
         logger.info(
-            f"Correct top {topk_index} prediction: {correct_top_k_wo_sim}, {correct_top_k_wo_sim / len(dataloader.dataset)}"
+            f"Correct top {topk_index} prediction: {correct_top_k}, {topk_acc}%"
         )
 
         all_preds_np = np.concatenate(all_preds)
@@ -56,8 +59,8 @@ class ModelEvaluator:
         report = self.generate_classification_report(
             all_labels_np,
             all_preds_np,
-            correct_top_k_wo_sim,
-            len(dataloader.dataset),
+            topk_index,
+            topk_acc,
             run_name,
             weights_save_location,
         )
@@ -69,14 +72,14 @@ class ModelEvaluator:
         self,
         all_labels,
         all_preds,
-        correct_top_k_wo_sim,
-        num_samples,
+        topk_index,
+        topk_acc,
         run_name,
         weights_save_location,
     ):
         report = classification_report(all_labels, all_preds, output_dict=True)
 
-        report["test_accuracy"] = correct_top_k_wo_sim / num_samples
+        report[f"top{topk_index}_accuracy"] = topk_acc
         report["run_name"] = run_name
         report["model_location"] = weights_save_location
 

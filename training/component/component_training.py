@@ -76,7 +76,9 @@ wandb_config = {
         "epochs": epochs,
     },
 }
+
 log_manager = EpochLogManager(wandb_config)
+torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
 

@@ -8,7 +8,7 @@ val_size: 0.2
 test_size: 0.2
 dropout: 0.2
 learning_rate: 0.0001
-epochs: 2
+epochs: 50
 batch_size: 10
 early_stopping_patience: 10
 topk_indices: 3
