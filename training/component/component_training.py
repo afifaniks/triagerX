@@ -82,6 +82,7 @@ torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
 
+logger.debug(f"Seed: {seed}")
 logger.debug(f"Selected compute device: {device}")
 logger.debug(f"Weights will be saved in: {weights_save_location}")
 logger.debug(f"Classification reports will be saved in: {test_report_location}")
