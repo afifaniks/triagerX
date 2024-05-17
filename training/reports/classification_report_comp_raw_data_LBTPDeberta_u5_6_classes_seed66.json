@@ -1,1 +1,54 @@
-{"0": {"precision": 0.735632183908046, "recall": 0.7804878048780488, "f1-score": 0.757396449704142, "support": 82.0}, "1": {"precision": 0.5230769230769231, "recall": 0.68, "f1-score": 0.591304347826087, "support": 50.0}, "2": {"precision": 0.4444444444444444, "recall": 0.4444444444444444, "f1-score": 0.4444444444444444, "support": 9.0}, "3": {"precision": 0.2222222222222222, "recall": 0.5, "f1-score": 0.30769230769230765, "support": 4.0}, "4": {"precision": 0.5864197530864198, "recall": 0.8260869565217391, "f1-score": 0.6859205776173285, "support": 115.0}, "5": {"precision": 0.9020979020979021, "recall": 0.7206703910614525, "f1-score": 0.8012422360248447, "support": 358.0}, "accuracy": 0.7394822006472492, "macro avg": {"precision": 0.5689822381393262, "recall": 0.6586149328176142, "f1-score": 0.5980000605515258, "support": 618.0}, "weighted avg": {"precision": 0.7795370464064435, "recall": 0.7394822006472492, "f1-score": 0.7485891301305833, "support": 618.0}, "top3_accuracy": 0.9838187702265372, "run_name": "comp_raw_data_LBTPDeberta_u5_6_classes_seed66", "model_location": "/work/disa_lab/projects/triagerx/models/comp_raw_data_LBTPDeberta_u5_6_classes_seed66.pt"}
+{
+    "0": {
+        "precision": 0.735632183908046,
+        "recall": 0.7804878048780488,
+        "f1-score": 0.757396449704142,
+        "support": 82
+    },
+    "1": {
+        "precision": 0.5230769230769231,
+        "recall": 0.68,
+        "f1-score": 0.591304347826087,
+        "support": 50
+    },
+    "2": {
+        "precision": 0.4444444444444444,
+        "recall": 0.4444444444444444,
+        "f1-score": 0.4444444444444444,
+        "support": 9
+    },
+    "3": {
+        "precision": 0.2222222222222222,
+        "recall": 0.5,
+        "f1-score": 0.30769230769230765,
+        "support": 4
+    },
+    "4": {
+        "precision": 0.5864197530864198,
+        "recall": 0.8260869565217391,
+        "f1-score": 0.6859205776173285,
+        "support": 115
+    },
+    "5": {
+        "precision": 0.9020979020979021,
+        "recall": 0.7206703910614525,
+        "f1-score": 0.8012422360248447,
+        "support": 358
+    },
+    "accuracy": 0.7394822006472492,
+    "macro avg": {
+        "precision": 0.5689822381393262,
+        "recall": 0.6586149328176142,
+        "f1-score": 0.5980000605515258,
+        "support": 618
+    },
+    "weighted avg": {
+        "precision": 0.7795370464064435,
+        "recall": 0.7394822006472492,
+        "f1-score": 0.7485891301305833,
+        "support": 618
+    },
+    "top3_accuracy": 0.9838187702265372,
+    "run_name": "comp_raw_data_LBTPDeberta_u5_6_classes_seed66",
+    "model_location": "/work/disa_lab/projects/triagerx/models/comp_raw_data_LBTPDeberta_u5_6_classes_seed66.pt"
+}
