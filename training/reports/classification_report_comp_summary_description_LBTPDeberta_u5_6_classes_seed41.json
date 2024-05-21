@@ -1,0 +1,54 @@
+{
+  "0": {
+    "precision": 0.7037037037037037,
+    "recall": 0.8142857142857143,
+    "f1-score": 0.7549668874172185,
+    "support": 70.0
+  },
+  "1": {
+    "precision": 0.7619047619047619,
+    "recall": 0.5818181818181818,
+    "f1-score": 0.6597938144329897,
+    "support": 55.0
+  },
+  "2": {
+    "precision": 0.6,
+    "recall": 0.375,
+    "f1-score": 0.4615384615384615,
+    "support": 8.0
+  },
+  "3": {
+    "precision": 0.6666666666666666,
+    "recall": 0.5714285714285714,
+    "f1-score": 0.6153846153846153,
+    "support": 7.0
+  },
+  "4": {
+    "precision": 0.6241610738255033,
+    "recall": 0.8157894736842105,
+    "f1-score": 0.7072243346007604,
+    "support": 114.0
+  },
+  "5": {
+    "precision": 0.8835820895522388,
+    "recall": 0.8131868131868132,
+    "f1-score": 0.8469241773962803,
+    "support": 364.0
+  },
+  "accuracy": 0.7847896440129449,
+  "macro avg": {
+    "precision": 0.7066697159421458,
+    "recall": 0.6619181257339152,
+    "f1-score": 0.6743053817950543,
+    "support": 618.0
+  },
+  "weighted avg": {
+    "precision": 0.79839632822623,
+    "recall": 0.7847896440129449,
+    "f1-score": 0.7864730042552629,
+    "support": 618.0
+  },
+  "top3_accuracy": 0.9902912621359223,
+  "run_name": "comp_summary_description_LBTPDeberta_u5_6_classes_seed41",
+  "model_location": "/work/disa_lab/projects/triagerx/models/comp_summary_description_LBTPDeberta_u5_6_classes_seed41.pt"
+}
