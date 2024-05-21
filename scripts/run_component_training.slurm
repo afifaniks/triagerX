@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 0-6:00:00
+#SBATCH -t 0-12:00:00
 #SBATCH -n 1
 #SBATCH --mem=80G
 #SBATCH --partition=gpu-a100 --gres=gpu:1
@@ -19,7 +19,7 @@ configs=(
 )
 
 # Array of seeds
-seeds=(66)
+seeds=(41 42)
 
 # Loop through each seed and config combination
 for seed in "${seeds[@]}"; do
