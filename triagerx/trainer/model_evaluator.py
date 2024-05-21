@@ -88,4 +88,4 @@ class ModelEvaluator:
     @staticmethod
     def save_report(report, test_report_location):
         with open(test_report_location, "w") as output_file:
-            json.dump(report, output_file)
+            json.dump(report, output_file, indent=2)
