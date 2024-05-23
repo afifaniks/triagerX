@@ -61,6 +61,7 @@ class LBTPClassifier(nn.Module):
         embedding_model,
         output_size,
         unfrozen_layers=1,
+        num_classifiers=3,
     ) -> None:
         super().__init__()
         self.base_model = embedding_model
@@ -77,6 +78,7 @@ class LBTPClassifier(nn.Module):
         filter_sizes = [3, 4, 5, 6]
         self._num_filters = 256
         self._max_tokens = 512
+        self._num_classifiers = num_classifiers
         self._embed_size = embedding_model.config.hidden_size
         self.unfrozen_layers = unfrozen_layers
         self.conv_blocks = nn.ModuleList(
@@ -93,7 +95,7 @@ class LBTPClassifier(nn.Module):
                         for K in filter_sizes
                     ]
                 )
-                for _ in range(unfrozen_layers)
+                for _ in range(self._num_classifiers)
             ]
         )
 
@@ -103,7 +105,7 @@ class LBTPClassifier(nn.Module):
                     len(filter_sizes) * self._num_filters + self._embed_size,
                     output_size,
                 )
-                for _ in range(unfrozen_layers)
+                for _ in range(self._num_classifiers)
             ]
         )
 
@@ -114,9 +116,9 @@ class LBTPClassifier(nn.Module):
 
         base_out = self.base_model(input_ids, attention_mask=attention_mask)
         pooler_out = base_out.pooler_output.squeeze(0)
-        hidden_states = base_out.hidden_states[-self.unfrozen_layers :]
+        hidden_states = base_out.hidden_states[-self._num_classifiers :]
 
-        for i in range(self.unfrozen_layers):
+        for i in range(self._num_classifiers):
             batch_size, sequence_length, hidden_size = hidden_states[i].size()
             x = [
                 conv(hidden_states[i].view(batch_size, 1, sequence_length, hidden_size))
@@ -270,7 +272,7 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
 learning_rate = 1e-5
-epochs = 12
+epochs = 50
 batch_size = 10
 
 wandb_config = {
