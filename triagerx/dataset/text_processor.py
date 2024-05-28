@@ -23,6 +23,7 @@ class TextProcessor:
         use_summary: bool,
         use_description: bool,
         component_training: bool,
+        is_openj9: bool = True
     ) -> pd.DataFrame:
         """
         Prepares the input DataFrame by processing its columns based on the specified options.
@@ -46,9 +47,9 @@ class TextProcessor:
         if component_training:
             df = df[df["labels"].notna()]
 
-        df = df[~df["issue_url"].str.contains("/pull/")]
-
-        df["component"] = df["labels"].apply(TextProcessor.component_split)
+        if is_openj9:
+            df = df[~df["issue_url"].str.contains("/pull/")]
+            df["component"] = df["labels"].apply(TextProcessor.component_split)
 
         df["text"] = df["issue_title"].progress_apply(
             lambda x: "Bug Title: " + str(x),
