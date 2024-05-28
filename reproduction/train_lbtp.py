@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
+
 import numpy as np
 import pandas as pd
 import torch
@@ -8,6 +12,7 @@ from tqdm import tqdm
 from transformers import RobertaConfig, RobertaModel, RobertaTokenizer
 
 import wandb
+from triagerx.trainer.model_evaluator import ModelEvaluator
 
 
 class TriageDataset(Dataset):
@@ -218,7 +223,7 @@ print(f"Total number of issues: {len(df)}")
 num_cv = 10
 # sample_threshold=20 # Threshold to filter developers
 samples_per_block = len(df) // num_cv
-block = 1
+block = 9
 sliced_df = df[: samples_per_block * (block + 1)]
 
 print(f"Samples per block: {samples_per_block}, Selected block: {block}")
@@ -388,3 +393,18 @@ for epoch_num in range(epochs):
         print("Found new best model. Saving weights...")
         torch.save(model.state_dict(), output_model_weights)
         best_loss = val_loss
+
+
+print("Starting testing...")
+model.load_state_dict(torch.load(output_model_weights))
+model_evaluator = ModelEvaluator()
+model_evaluator.evaluate(
+    model=model,
+    dataloader=val_dataloader,
+    device=device,
+    run_name=f"lbtp_gc_block{block}",
+    topk_index=10,
+    weights_save_location=output_model_weights,
+    test_report_location="lbtp_reproduction.json",
+)
+print("Finished testing.")
