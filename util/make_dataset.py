@@ -43,14 +43,15 @@ class IssueExtractor:
         if assignees:
             return ",".join([assignee["login"] for assignee in assignees])
         else:
+            last_assignee = None
             timeline = issue["timeline_data"]
             for timeline_event in timeline:
                 event = timeline_event["event"]
                 if event == "cross-referenced" and timeline_event["source"]["issue"].get("pull_request", None):
-                    return timeline_event["actor"]["login"]
+                    last_assignee = timeline_event["actor"]["login"]
                 if event == "referenced" and timeline_event["commit_url"]:
-                    return timeline_event["actor"]["login"]
-        return None
+                    last_assignee = timeline_event["actor"]["login"]
+        return last_assignee
 
     def component_split(self, labels):
         for label in labels.split(","):
@@ -65,4 +66,4 @@ issues = extractor.extract_issues(json_root=json_root)
 
 df = pd.DataFrame(issues)
 df = df.sort_values(by="issue_number")
-df.to_csv("test.csv", index=False)
+df.to_csv("openj9_processed.csv", index=False)
