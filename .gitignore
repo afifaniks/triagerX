@@ -28,3 +28,4 @@ tokenizer/deeptriage/special_tokens_map.json
 tokenizer/deeptriage/tokenizer_config.json
 tokenizer/deeptriage/tokenizer.json
 tokenizer/deeptriage/vocab.json
+.nfs*
