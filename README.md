@@ -1,13 +1,11 @@
-## Create Conda Environment
+# Triager X
+## Build docker image
 ```shell
-conda create --name trx --file requirements.txt
-```
-## Run Jupyter NB Server on ARC Cluster
-```shell
-sbatch ./start_nb_server_job.sh
-```
 
-## Stop Server
+docker build -t triagerx .
+```
+## Run docker container
 ```shell
-./stop_nb_server_job.sh
+
+docker run --gpus all --rm -p 8080:80 --name triagerx triagerx
 ```
