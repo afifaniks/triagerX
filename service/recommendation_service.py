@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pandas as pd
 import torch
@@ -61,6 +61,14 @@ class RecommendationService:
         )
 
     def get_recommendation(self, issue_title: str, issue_description: str):
+        processed_issue = TextProcessor.prepare_text(
+            issue_title,
+            issue_description,
+            summary="",
+            use_description=True,
+            use_summary=False,
+            use_special_tokens=False,
+        )
         return self.triager.get_recommendation(
-            TextProcessor.prepare_text(issue_title, issue_description)
+            processed_issue, k_comp=3, k_dev=3, k_rank=5, similarity_threshold=0.5
         )
