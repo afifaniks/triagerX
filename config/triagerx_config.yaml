@@ -1,3 +1,7 @@
+project:
+  title: "TriagerX for Openj9"
+  api_version: "1.0"
+
 similarity_model:
   model_key: "all-mpnet-base-v2"
 
