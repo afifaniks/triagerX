@@ -187,9 +187,12 @@ class TriagerX:
 
             issue = self._train_data.iloc[issue_index]
 
-            if self._component2id_map[issue.component] not in predicted_component_ids:
+            if (
+                self._component2id_map.get(issue.component, None)
+                not in predicted_component_ids
+            ):
                 logger.warning(
-                    f"Skipping issue as label id {self._component2id_map[issue.component]} did not match with any of {predicted_component_ids}"
+                    f"Skipping issue as label id {self._component2id_map.get(issue.component, None)} did not match with any of {predicted_component_ids}"
                 )
                 continue
 
@@ -290,31 +293,3 @@ class TriagerX:
                 similar_issues.append([idx, sim_score])
 
         return similar_issues
-
-    def _clean_data(self, issue_data):
-        issue_data = re.sub(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
-            " ",
-            issue_data,
-        )
-        issue_data = re.sub(" +", " ", issue_data)
-        issue_data = issue_data.strip()
-        issue_data = re.sub(r"0x[\da-fA-F]+", self._special_tokens["hex"], issue_data)
-        issue_data = re.sub(
-            r"\b[0-9a-fA-F]{16}\b", self._special_tokens["hex"], issue_data
-        )
-        issue_data = re.sub(
-            r"\b\d{2}:\d{2}:\d{2}\.\d{3}\b",
-            self._special_tokens["timestamp"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"\s*[-+]?\d*\.\d+([eE][-+]?\d+)?",
-            self._special_tokens["float"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"=\s*-?\d+", f'= {self._special_tokens["param"]}', issue_data
-        )
-
-        return issue_data
