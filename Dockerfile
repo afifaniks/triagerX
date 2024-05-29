@@ -21,7 +21,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the main.py script when the container launches
 CMD ["fastapi", "dev", "main.py"]
