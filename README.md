@@ -7,5 +7,5 @@ docker build -t triagerx .
 ## Run docker container
 ```shell
 
-docker run --gpus all --rm -p 8080:8080 --name triagerx triagerx
+docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
 ```
