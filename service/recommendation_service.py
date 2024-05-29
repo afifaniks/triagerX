@@ -14,22 +14,37 @@ from util.model_loader import get_trained_model
 class RecommendationService:
     def __init__(self, config: Dict[Any, Any]):
         self._config = config
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        logger.debug(f"Using device: {self._device}")
+
+        self._initialize_models()
+        self._initialize_triager()
+
+    def _initialize_models(self):
         logger.debug("Loading pretrained weights...")
-        self._component_model = self._load_trained_model(config["component_model"])
-        self._developer_model = self._load_trained_model(config["developer_model"])
+        self._component_model = self._load_trained_model(
+            self._config["component_model"]
+        )
+        self._developer_model = self._load_trained_model(
+            self._config["developer_model"]
+        )
         self._similarity_model = SentenceTransformer(
-            config["similarity_model"]["model_key"]
+            self._config["similarity_model"]["model_key"]
         )
 
-        tokenizer = AutoTokenizer.from_pretrained(config["tokenizer"]["model_name"])
-        tokenizer_config = config["tokenizer"]
-        developer_id_map = config["developer_id_map"]
-        component_id_map = config["component_id_map"]
-        component_dev_map = config["component_developer_map"]
-        train_df = pd.read_csv(config["data"]["train_data"])
-        issues_dir = config["data"]["issues_dir"]
+    def _initialize_triager(self):
+        tokenizer = AutoTokenizer.from_pretrained(
+            self._config["tokenizer"]["model_name"]
+        )
+        tokenizer_config = self._config["tokenizer"]
+        developer_id_map = self._config["developer_id_map"]
+        component_id_map = self._config["component_id_map"]
+        component_dev_map = self._config["component_developer_map"]
+        train_df = pd.read_csv(self._config["data"]["train_data"])
+        issues_dir = self._config["data"]["issues_dir"]
 
-        logger.debug("Initializing Triager X system...")
+        logger.debug("Initializing Triager X engine...")
         self.triager = TriagerX(
             developer_prediction_model=self._developer_model,
             component_prediction_model=self._component_model,
@@ -41,7 +56,7 @@ class RecommendationService:
             component_id_map=component_id_map,
             component_developers_map=component_dev_map,
             issues_path=issues_dir,
-            device="cuda" if torch.cuda.is_available() else "cpu",
+            device=self._device,
         )
 
     def _load_trained_model(self, model_config: Dict):
@@ -58,6 +73,7 @@ class RecommendationService:
             dropout=model_config["dropout"],
             base_model=model_config["base_transformer_model"],
             tokenizer=tokenizer,
+            device=self._device,
         )
 
     def get_recommendation(self, issue_title: str, issue_description: str):
