@@ -51,10 +51,9 @@ class TriagerX:
             for user_list in self._component_developers_map.values()
             for user in user_list
         ]
-        logger.debug(f"Using device: {device}")
         logger.debug("Generating embedding for existing issues...")
         self._all_embeddings = similarity_model.encode(
-            self._train_data.text.to_list(), batch_size=15
+            self._train_data.text.to_list(), batch_size=15, show_progress_bar=True
         )
 
     def get_recommendation(self, issue, k_comp, k_dev, k_rank, similarity_threshold):
