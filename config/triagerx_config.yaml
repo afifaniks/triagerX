@@ -23,6 +23,10 @@ developer_model:
   topk_indices: 3
   weights_save_location: "model_weights/comp_raw_data_LBTPDeberta_u5_6_classes_seed66.pt"
 
+data:
+  issues_dir: "data/issue_data"
+  train_data: "data/train_data.csv"
+
 tokenizer:
   model_name: "microsoft/deberta-base"
   padding: "max_length"
