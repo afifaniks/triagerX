@@ -21,7 +21,7 @@ developer_model:
   unfrozen_layers: 4
   dropout: 0.2
   topk_indices: 3
-  weights_save_location: "model_weights/comp_raw_data_LBTPDeberta_u5_6_classes_seed66.pt"
+  weights_save_location: "model_weights/dev_raw_data_LBTPDeberta_u4_16_classes_seed66.pt"
 
 data:
   issues_dir: "data/issue_data"
