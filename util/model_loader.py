@@ -12,6 +12,7 @@ def get_trained_model(
     dropout: float,
     base_model: str,
     tokenizer: PreTrainedTokenizer,
+    device: str,
 ) -> nn.Module:
     model = LBTPDeberta(
         output_size=num_classes,
@@ -22,6 +23,6 @@ def get_trained_model(
 
     model.base_model.resize_token_embeddings(len(tokenizer))
 
-    model.load_state_dict(torch.load(weight_path))
+    model.load_state_dict(torch.load(weight_path, map_location=device))
 
     return model
