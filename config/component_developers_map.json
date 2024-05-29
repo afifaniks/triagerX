@@ -1,0 +1,45 @@
+{
+  "comp:vm": [
+    "pshipton",
+    "keithc-ca",
+    "gacholio",
+    "tajila",
+    "babsingh",
+    "JasonFengJ9",
+    "fengxue-IS",
+    "hangshao0",
+    "theresa.t.mammarella",
+    "ChengJin01",
+    "singh264",
+    "thallium",
+    "ThanHenderson"
+  ],
+  "comp:jvmti": [
+    "gacholio",
+    "tajila",
+    "babsingh",
+    "fengxue-IS"
+  ],
+  "comp:jclextensions": [
+    "JasonFengJ9",
+    "pshipton",
+    "keithc-ca"
+  ],
+  "comp:test": [
+    "LongyuZhang",
+    "annaibm",
+    "sophiaxu0424",
+    "KapilPowar",
+    "llxia"
+  ],
+  "comp:build": [
+    "adambrousseau",
+    "mahdipub"
+  ],
+  "comp:gc": [
+    "dmitripivkine",
+    "amicic",
+    "kangyining",
+    "LinHu2016"
+  ]
+}

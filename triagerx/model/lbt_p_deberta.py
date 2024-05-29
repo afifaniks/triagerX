@@ -6,13 +6,17 @@ from transformers import AutoModel, AutoTokenizer
 
 class LBTPDeberta(nn.Module):
     def __init__(
-        self, output_size, unfrozen_layers=4, dropout=0.1, base_model="microsoft/deberta-large"
+        self,
+        output_size,
+        unfrozen_layers=4,
+        dropout=0.1,
+        base_model="microsoft/deberta-large",
     ) -> None:
         super().__init__()
         self.base_model = AutoModel.from_pretrained(
             base_model, output_hidden_states=True
         )
-        self._tokenizer = AutoTokenizer.from_pretrained(base_model)        
+        self._tokenizer = AutoTokenizer.from_pretrained(base_model)
 
         # Freeze embedding layers
         for p in self.base_model.embeddings.parameters():
@@ -49,9 +53,7 @@ class LBTPDeberta(nn.Module):
 
         self.classifiers = nn.ModuleList(
             [
-                nn.Linear(
-                    len(filter_sizes) * self._num_filters, output_size
-                )
+                nn.Linear(len(filter_sizes) * self._num_filters, output_size)
                 for _ in range(unfrozen_layers)
             ]
         )
@@ -61,7 +63,9 @@ class LBTPDeberta(nn.Module):
     def forward(self, input_ids, attention_mask, tok_type):
         outputs = []
 
-        base_out = self.base_model(input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask)
+        base_out = self.base_model(
+            input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask
+        )
         # pooler_out = base_out.last_hidden_state.squeeze(0)
         hidden_states = base_out.hidden_states[-self.unfrozen_layers :]
 

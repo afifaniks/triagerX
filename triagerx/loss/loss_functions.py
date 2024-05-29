@@ -12,9 +12,9 @@ class F1Loss(nn.Module):
 
         for i in range(len(predictions)):
             y_pred = predictions[i]
-            
+
             y_probs = F.softmax(y_pred, dim=1)
-        
+
             # Convert true labels to one-hot encoding
             y_onehot = F.one_hot(y_true, num_classes=y_probs.size(1)).float()
 
@@ -33,10 +33,10 @@ class F1Loss(nn.Module):
             # Average F1 scores across all classes
             mean_f1_score = f1_score.mean()
 
-            loss += (1 - mean_f1_score)         
+            loss += 1 - mean_f1_score
 
         return loss
-    
+
 
 class F1CELoss(nn.Module):
     def __init__(self, num_classes, ce_weigths=None, beta=1):
@@ -52,9 +52,9 @@ class F1CELoss(nn.Module):
             y_pred = predictions[i]
 
             ce_loss = self._ce(y_pred, y_true)
-            
+
             y_probs = F.softmax(y_pred, dim=1)
-        
+
             # Convert true labels to one-hot encoding
             y_onehot = F.one_hot(y_true, num_classes=self._num_classes).float()
 
@@ -74,38 +74,35 @@ class F1CELoss(nn.Module):
             mean_f1_score = f1_score.mean()
 
             # Make sure losses are in scale of 0...1
-            loss = ((self._beta * ce_loss) + ((1 - mean_f1_score) * (1-self._beta)))
+            loss = (self._beta * ce_loss) + ((1 - mean_f1_score) * (1 - self._beta))
             total_loss += loss
 
-        return total_loss # You can take a mean
-    
+        return total_loss  # You can take a mean
+
 
 class CombinedLoss(nn.Module):
-    def __init__(self, weights = None) -> None:
+    def __init__(self, weights=None) -> None:
         super().__init__()
         self._ce = nn.CrossEntropyLoss(weight=weights)
-    def forward(
-        self,
-        prediction,
-        labels
-    ) -> torch.Tensor:
+
+    def forward(self, prediction, labels) -> torch.Tensor:
         loss = 0
 
         for i in range(len(prediction)):
             loss += self._ce(prediction[i], labels)
 
         return loss
-    
+
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2, alpha=None, reduction='mean'):
+    def __init__(self, gamma=2, alpha=None, reduction="mean"):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
         self.reduction = reduction
 
     def forward(self, input, target):
-        ce_loss = F.cross_entropy(input, target, reduction='none')
+        ce_loss = F.cross_entropy(input, target, reduction="none")
         pt = torch.exp(-ce_loss)
         focal_loss = (1 - pt) ** self.gamma * ce_loss
 
@@ -114,23 +111,20 @@ class FocalLoss(nn.Module):
                 self.alpha = self.alpha.type_as(input.data)
             focal_loss = focal_loss * self.alpha
 
-        if self.reduction == 'mean':
+        if self.reduction == "mean":
             return torch.mean(focal_loss)
-        elif self.reduction == 'sum':
+        elif self.reduction == "sum":
             return torch.sum(focal_loss)
         else:
             return focal_loss
-        
+
 
 class CombinedFocalLoss(nn.Module):
-    def __init__(self, reduction='mean') -> None:
+    def __init__(self, reduction="mean") -> None:
         super().__init__()
         self._fl = FocalLoss(reduction=reduction)
-    def forward(
-        self,
-        prediction,
-        labels
-    ) -> torch.Tensor:
+
+    def forward(self, prediction, labels) -> torch.Tensor:
         loss = 0
 
         for i in range(len(prediction)):

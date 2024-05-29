@@ -56,8 +56,7 @@ def get_field_data(url, headers):
     page = 1
 
     while True:
-        comments_response = requests.get(
-            f"{url}?page={page}", headers=headers)
+        comments_response = requests.get(f"{url}?page={page}", headers=headers)
         comments_response.raise_for_status()
         data = comments_response.json()
         comments_data.extend(data)
@@ -93,9 +92,9 @@ def dump_issues(owner, repo, gh_token, path):
     page = 1
     per_page = 100
     headers = {
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Authorization': f'Bearer {gh_token}'
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": f"Bearer {gh_token}",
     }
 
     while True:
@@ -109,8 +108,8 @@ def dump_issues(owner, repo, gh_token, path):
 
         for issue in filtered_issues:
             print(f"Extracting issue data: {issue['number']}")
-            issue['timeline_data'] = get_field_data(issue['timeline_url'], headers)
-            issue['comments_data'] = get_field_data(issue['comments_url'], headers)
+            issue["timeline_data"] = get_field_data(issue["timeline_url"], headers)
+            issue["comments_data"] = get_field_data(issue["comments_url"], headers)
             dump_issue_data(issue, path)
             time.sleep(1.2)
 
@@ -118,8 +117,8 @@ def dump_issues(owner, repo, gh_token, path):
 
 
 # Example usage
-owner = 'eclipse-openj9'
-repo = 'openj9'
+owner = "eclipse-openj9"
+repo = "openj9"
 
 gh_token = os.environ["GH_TOKEN"]
 path = "D:\\Triager X\\triagerX\\util\\data\\issue_data"

@@ -23,7 +23,7 @@ class TextProcessor:
         use_summary: bool,
         use_description: bool,
         component_training: bool,
-        is_openj9: bool = True
+        is_openj9: bool = True,
     ) -> pd.DataFrame:
         """
         Prepares the input DataFrame by processing its columns based on the specified options.
@@ -211,7 +211,7 @@ class TextProcessor:
     def clean_summary(summary: str) -> str:
         summary = str(summary)
         summary = re.sub("Here is a summar.*?:", "", summary)
-        summary = re.sub("\s+", " ", summary)
+        summary = re.sub(r"\s+", " ", summary)
         summary = summary.strip()
 
         return summary

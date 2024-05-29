@@ -90,7 +90,7 @@ class TriagerX:
         similar_issue_devs = [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
         logger.info(f"Recommended developers by issue similarity: {similar_issue_devs}")
 
-        logger.debug(f"Aggregating ranking...")
+        logger.debug("Aggregating ranking...")
         rank_lists = [predicted_developers_name, similar_issue_devs]
 
         aggregated_rank = self._aggregate_rank(rank_lists)[:k_dev]

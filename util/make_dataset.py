@@ -10,7 +10,9 @@ class IssueExtractor:
     def extract_issues(self, json_root):
         all_issues = []
         file_paths = os.listdir(json_root)
-        progress_bar = tqdm(total=len(file_paths), desc="Processing issues", unit="files", leave=False)
+        progress_bar = tqdm(
+            total=len(file_paths), desc="Processing issues", unit="files", leave=False
+        )
         for file_path in file_paths:
             progress_bar.update(1)
             progress_bar.set_description(desc=f"Processing file: {file_path}")
@@ -31,8 +33,10 @@ class IssueExtractor:
             "issue_url": issue["html_url"],
             "issue_state": issue["state"],
             "creator": issue["user"]["login"],
-            "labels": ", ".join([label["name"] for label in issue["labels"]]) if issue["labels"] else "",
-            "assignees": self.extract_assignees(issue)
+            "labels": ", ".join([label["name"] for label in issue["labels"]])
+            if issue["labels"]
+            else "",
+            "assignees": self.extract_assignees(issue),
         }
         issue_dict["component"] = self.component_split(issue_dict["labels"])
 
@@ -47,7 +51,9 @@ class IssueExtractor:
             timeline = issue["timeline_data"]
             for timeline_event in timeline:
                 event = timeline_event["event"]
-                if event == "cross-referenced" and timeline_event["source"]["issue"].get("pull_request", None):
+                if event == "cross-referenced" and timeline_event["source"][
+                    "issue"
+                ].get("pull_request", None):
                     last_assignee = timeline_event["actor"]["login"]
                 if event == "referenced" and timeline_event["commit_url"]:
                     last_assignee = timeline_event["actor"]["login"]

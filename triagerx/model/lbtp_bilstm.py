@@ -6,13 +6,17 @@ from transformers import AutoModel, AutoTokenizer
 
 class LBTPBiLSTM(nn.Module):
     def __init__(
-        self, output_size, unfrozen_layers=4, dropout=0.1, base_model="microsoft/deberta-large"
+        self,
+        output_size,
+        unfrozen_layers=4,
+        dropout=0.1,
+        base_model="microsoft/deberta-large",
     ) -> None:
         super().__init__()
         self.base_model = AutoModel.from_pretrained(
             base_model, output_hidden_states=True
         )
-        self._tokenizer = AutoTokenizer.from_pretrained(base_model)        
+        self._tokenizer = AutoTokenizer.from_pretrained(base_model)
 
         # Freeze embedding layers
         for p in self.base_model.embeddings.parameters():
@@ -50,33 +54,32 @@ class LBTPBiLSTM(nn.Module):
         self.lstm = nn.ModuleList(
             [
                 nn.LSTM(
-                    len(filter_sizes) * self._num_filters, 
-                    num_layers=3, 
-                    hidden_size=256, 
-                    bidirectional=True, 
-                    batch_first=True
+                    len(filter_sizes) * self._num_filters,
+                    num_layers=3,
+                    hidden_size=256,
+                    bidirectional=True,
+                    batch_first=True,
                 )
                 for _ in range(unfrozen_layers)
             ]
         )
 
         self.classifiers = nn.ModuleList(
-            [
-                nn.Linear(
-                    512, output_size
-                )
-                for _ in range(unfrozen_layers)
-            ]
+            [nn.Linear(512, output_size) for _ in range(unfrozen_layers)]
         )
-        
-        self.classifier_weights = nn.ParameterList([nn.Parameter(torch.ones(1)) for _ in range(unfrozen_layers)])
+
+        self.classifier_weights = nn.ParameterList(
+            [nn.Parameter(torch.ones(1)) for _ in range(unfrozen_layers)]
+        )
 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, input_ids, attention_mask, tok_type):
         outputs = []
 
-        base_out = self.base_model(input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask)
+        base_out = self.base_model(
+            input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask
+        )
         # pooler_out = base_out.last_hidden_state.squeeze(0)
         hidden_states = base_out.hidden_states[-self.unfrozen_layers :]
 

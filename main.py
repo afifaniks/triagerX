@@ -17,5 +17,5 @@ def read_item(request: RecommendationRequest) -> RecommendationResponse:
     logger.debug(f"Received request: {request}")
     return RecommendationResponse(
         recommended_components=["com1", "comp2"],
-        recommended_developers=["dev1", "dev2", "dev3"]
+        recommended_developers=["dev1", "dev2", "dev3"],
     )

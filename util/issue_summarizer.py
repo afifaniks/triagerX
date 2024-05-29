@@ -3,7 +3,9 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-INPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/openj9_processed.csv"
+INPUT_DATA = (
+    "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/openj9_processed.csv"
+)
 OUTPUT_DATA = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/openj9/component_training/df_all_summarized.csv"
 
 print("Loading Llama3 pipeline...")
@@ -18,25 +20,33 @@ model = AutoModelForCausalLM.from_pretrained(
 
 max_new_tokens = 512
 
+
 def get_summary(text):
     messages = [
-        {"role": "system", "content": "You are a bug report summarizer. " \
-        "Given a bug description that includes logs, stacktraces, your job is to summarize the bug in natural language for better understanding."},
-        {"role": "user", "content": "Sumamrize the provided bug report in a passage. During summarization avoid using special characters, brackets, etc." 
-        "Include every details in the bug presumably the root cause, associated files, any relavant information.:\n" + text},
+        {
+            "role": "system",
+            "content": "You are a bug report summarizer. "
+            "Given a bug description that includes logs, stacktraces, your job is to summarize the bug in natural language for better understanding.",
+        },
+        {
+            "role": "user",
+            "content": "Sumamrize the provided bug report in a passage. During summarization avoid using special characters, brackets, etc."
+            "Include every details in the bug presumably the root cause, associated files, any relavant information.:\n"
+            + text,
+        },
     ]
 
     input_ids = tokenizer.apply_chat_template(
         messages,
         add_generation_prompt=True,
-        max_length=model.config.max_position_embeddings-max_new_tokens,
+        max_length=model.config.max_position_embeddings - max_new_tokens,
         truncation=True,
-        return_tensors="pt"
+        return_tensors="pt",
     ).to(model.device)
 
     terminators = [
         tokenizer.eos_token_id,
-        tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        tokenizer.convert_tokens_to_ids("<|eot_id|>"),
     ]
 
     outputs = model.generate(
@@ -47,8 +57,8 @@ def get_summary(text):
         temperature=0.5,
         top_p=0.9,
     )
-    response = outputs[0][input_ids.shape[-1]:]
-    
+    response = outputs[0][input_ids.shape[-1] :]
+
     return tokenizer.decode(response, skip_special_tokens=True)
 
 

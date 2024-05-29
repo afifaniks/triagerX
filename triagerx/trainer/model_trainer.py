@@ -32,9 +32,14 @@ class ModelTrainer:
             total_acc_train, total_loss_train = self._train_one_epoch(
                 model, train_dataloader, criterion, optimizer, scheduler
             )
-            total_acc_val, total_loss_val, precision, recall, f1_score, topk = (
-                self._validate_one_epoch(model, validation_dataloader, criterion)
-            )
+            (
+                total_acc_val,
+                total_loss_val,
+                precision,
+                recall,
+                f1_score,
+                topk,
+            ) = self._validate_one_epoch(model, validation_dataloader, criterion)
 
             log_metrics = {
                 "precision": precision,

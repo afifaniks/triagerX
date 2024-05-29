@@ -9,7 +9,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def save_commit_details(owner, repo, commit_sha, github_username, github_token, save_dir):
+def save_commit_details(
+    owner, repo, commit_sha, github_username, github_token, save_dir
+):
     url = f"https://api.github.com/repos/{owner}/{repo}/commits/{commit_sha}"
     response = requests.get(url, auth=(github_username, github_token))
     if response.status_code == 200:
@@ -26,8 +28,10 @@ def get_all_commits(owner, repo, github_username, github_token, save_root_dir):
     page = 1
     while True:
         print(f"Extracting page {page}...")
-        params = {'page': page, 'per_page': 100}  # Pagination
-        response = requests.get(url, params=params, auth=(github_username, github_token))
+        params = {"page": page, "per_page": 100}  # Pagination
+        response = requests.get(
+            url, params=params, auth=(github_username, github_token)
+        )
 
         if response.status_code == 200:
             commits = response.json()
@@ -39,7 +43,14 @@ def get_all_commits(owner, repo, github_username, github_token, save_root_dir):
                 os.makedirs(commits_root)
 
             for commit in commits:
-                save_commit_details(owner, repo, commit["sha"], github_username, github_token, commits_root)
+                save_commit_details(
+                    owner,
+                    repo,
+                    commit["sha"],
+                    github_username,
+                    github_token,
+                    commits_root,
+                )
 
                 time.sleep(1.3)
             page += 1
