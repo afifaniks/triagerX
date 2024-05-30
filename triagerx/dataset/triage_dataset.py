@@ -12,6 +12,7 @@ class TriageDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         feature: str,
         target: str,
+        max_length: int = 512,
     ):
         logger.debug("Generating torch dataset...")
         logger.debug(f"Dataset feature column: {feature}, target column: {target}")
@@ -22,7 +23,7 @@ class TriageDataset(Dataset):
             self.tokenizer(
                 row[feature],
                 padding="max_length",
-                max_length=512,
+                max_length=max_length,
                 truncation=True,
                 return_tensors="pt",
             )

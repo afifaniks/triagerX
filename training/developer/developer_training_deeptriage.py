@@ -78,8 +78,8 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-
-log_manager = EpochLogManager(None)
+max_tokens = 256
+log_manager = EpochLogManager(wandb_config=wandb_config)
 torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
@@ -156,6 +156,7 @@ model = LBTPDeberta(
     unfrozen_layers=unfrozen_layers,
     dropout=dropout,
     base_model=base_transformer_model,
+    max_tokens=max_tokens,
 )
 criterion = CombinedLoss()
 tokenizer = model.tokenizer()
@@ -170,8 +171,8 @@ if use_special_tokens:
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id")
-val_ds = TriageDataset(df_test, tokenizer, "text", "owner_id")
+train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id", max_length=max_tokens)
+val_ds = TriageDataset(df_test, tokenizer, "text", "owner_id", max_length=max_tokens)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
