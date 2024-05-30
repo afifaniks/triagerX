@@ -68,7 +68,7 @@ class LBTPClassifier(nn.Module):
         output_size,
         unfrozen_layers=1,
         num_classifiers=3,
-        max_tokens=256
+        max_tokens=256,
     ) -> None:
         super().__init__()
         self.base_model = embedding_model
@@ -213,7 +213,7 @@ def clean_data(df):
     return df
 
 
-dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/notebook/data/deeptriage/gc_20_topics_kmeans.csv"
+dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv"
 
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
