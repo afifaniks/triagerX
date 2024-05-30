@@ -22,6 +22,7 @@ class TriageDataset(Dataset):
         tokenizer: RobertaTokenizer,
         feature: str = "text",
         target: str = "owner_id",
+        max_tokens: int = 256,
     ):
         print("Generating torch dataset...")
         self.tokenizer = tokenizer
@@ -31,7 +32,7 @@ class TriageDataset(Dataset):
             self.tokenizer(
                 row[feature],
                 padding="max_length",
-                max_length=512,
+                max_length=max_tokens,
                 truncation=True,
                 return_tensors="pt",
             )
@@ -67,6 +68,7 @@ class LBTPClassifier(nn.Module):
         output_size,
         unfrozen_layers=1,
         num_classifiers=3,
+        max_tokens=256
     ) -> None:
         super().__init__()
         self.base_model = embedding_model
@@ -82,7 +84,7 @@ class LBTPClassifier(nn.Module):
 
         filter_sizes = [3, 4, 5, 6]
         self._num_filters = 256
-        self._max_tokens = 512
+        self._max_tokens = max_tokens
         self._num_classifiers = num_classifiers
         self._embed_size = embedding_model.config.hidden_size
         self.unfrozen_layers = unfrozen_layers

@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 0-24:00:00
+#SBATCH -t 0-14:00:00
 #SBATCH -n 1
 #SBATCH --mem=80G
-#SBATCH --partition=gpu-v100 --gres=gpu:1
+#SBATCH --partition=gpu-a100 --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/%j.out
 
 # Activate conda environment

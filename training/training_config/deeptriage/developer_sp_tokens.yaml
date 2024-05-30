@@ -8,9 +8,9 @@ total_folds: 10
 fold_number: 9
 dropout: 0.2
 learning_rate: 0.00001
-epochs: 20
+epochs: 40
 batch_size: 10
-early_stopping_patience: 5
+early_stopping_patience: 10
 topk_indices: 10
 run_name: "triagerx_dt_gc"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/"
