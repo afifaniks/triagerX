@@ -14,17 +14,24 @@ To build the Docker image for Triager X, run the following command:
 docker build -t triagerx .
 ```
 
-## Run Docker Container
-To run the Docker container with GPU support, use the following command:
+## Load Docker Image
+To build the Docker image for Triager X, run the following command:
 
-### With GPU
 ```shell
-docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
+docker load -i triagerx.tar
 ```
 
-### Without GPU
+## Run Docker Container
+To run the Docker container on CPU, use the following command:
+### CPU
 ```shell
 docker run --rm -p 8000:80 --name triagerx triagerx
+```
+
+To run the Docker container with GPU support, use the following command:
+### GPU
+```shell
+docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
 ```
 
 ## Example API Request
@@ -57,6 +64,16 @@ The API will respond with a JSON object containing the recommended components an
     "babsingh"
   ]
 }
+```
+
+## Swagger UI
+
+You can also invoke the endpoint with Swagger UI.
+To access the UI for using the API or reading the documentation,
+navigate to the following address once the container is up and running:
+
+```
+http://127.0.0.1:8000/docs
 ```
 
 ## Usage
