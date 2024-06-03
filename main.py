@@ -30,7 +30,7 @@ def health_check():
 def get_recommendation(request: RecommendationRequest) -> RecommendationResponse:
     logger.debug(f"Received request: {request}")
     recommendations = recommendation_service.get_recommendation(
-        request.issue_tile, request.issue_description
+        request.issue_title, request.issue_description
     )
     return RecommendationResponse(
         recommended_components=recommendations["predicted_components"],
