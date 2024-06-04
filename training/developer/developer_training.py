@@ -46,10 +46,12 @@ use_description = config.get("use_description")
 dataset_path = config.get("dataset_path")
 base_transformer_model = config.get("base_transformer_model")
 unfrozen_layers = config.get("unfrozen_layers")
+num_classifiers = config.get("num_classifiers")
 seed = args.seed
 val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
+max_tokens = config.get("max_tokens")
 learning_rate = config.get("learning_rate")
 epochs = config.get("epochs")
 batch_size = config.get("batch_size")
@@ -187,8 +189,10 @@ logger.debug("Modeling network...")
 model = LBTPDeberta(
     len(df_train.owner_id.unique()),
     unfrozen_layers=unfrozen_layers,
+    num_classifiers=num_classifiers,
     dropout=dropout,
     base_model=base_transformer_model,
+    max_tokens=max_tokens,
 )
 criterion = CombinedLoss()
 tokenizer = model.tokenizer()
@@ -203,8 +207,8 @@ if use_special_tokens:
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id")
-val_ds = TriageDataset(df_test, tokenizer, "text", "owner_id")
+train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id", max_length=max_tokens)
+val_ds = TriageDataset(df_test, tokenizer, "text", "owner_id", max_length=max_tokens)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
