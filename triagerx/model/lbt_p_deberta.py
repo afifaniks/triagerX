@@ -8,7 +8,8 @@ class LBTPDeberta(nn.Module):
     def __init__(
         self,
         output_size,
-        unfrozen_layers=4,
+        unfrozen_layers,
+        num_classifiers,
         dropout=0.1,
         base_model="microsoft/deberta-large",
         max_tokens=512,
@@ -30,6 +31,7 @@ class LBTPDeberta(nn.Module):
 
         filter_sizes = [3, 4, 5, 6]
         self._num_filters = 256
+        self._num_classifiers = num_classifiers
         self._max_tokens = max_tokens
         self._embed_size = self.base_model.config.hidden_size
         self.unfrozen_layers = unfrozen_layers
@@ -48,14 +50,14 @@ class LBTPDeberta(nn.Module):
                         for K in filter_sizes
                     ]
                 )
-                for _ in range(unfrozen_layers)
+                for _ in range(self._num_classifiers)
             ]
         )
 
         self.classifiers = nn.ModuleList(
             [
                 nn.Linear(len(filter_sizes) * self._num_filters, output_size)
-                for _ in range(unfrozen_layers)
+                for _ in range(self._num_classifiers)
             ]
         )
 
@@ -68,9 +70,9 @@ class LBTPDeberta(nn.Module):
             input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask
         )
         # pooler_out = base_out.last_hidden_state.squeeze(0)
-        hidden_states = base_out.hidden_states[-self.unfrozen_layers :]
+        hidden_states = base_out.hidden_states[-self._num_classifiers :]
 
-        for i in range(self.unfrozen_layers):
+        for i in range(self._num_classifiers):
             batch_size, sequence_length, hidden_size = hidden_states[i].size()
             x = [
                 conv(hidden_states[i].view(batch_size, 1, sequence_length, hidden_size))
