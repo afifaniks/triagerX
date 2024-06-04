@@ -23,7 +23,7 @@ class TextProcessor:
         use_summary: bool,
         use_description: bool,
         component_training: bool,
-        is_openj9: bool = True
+        is_openj9: bool = True,
     ) -> pd.DataFrame:
         """
         Prepares the input DataFrame by processing its columns based on the specified options.
@@ -59,6 +59,11 @@ class TextProcessor:
             logger.info("Adding special tokens...")
             df["description"] = df["description"].progress_apply(
                 TextProcessor.process_special_tokens
+            )
+        else:
+            logger.info("Cleaning text...")
+            df["description"] = df["description"].progress_apply(
+                TextProcessor.clean_text
             )
 
         if use_summary:
@@ -215,3 +220,36 @@ class TextProcessor:
         summary = summary.strip()
 
         return summary
+
+    @staticmethod
+    def clean_text(text: str) -> str:
+        text = str(text)  # In case, there is nan or something else
+        cleaned_text = text.strip()
+
+        cleaned_text = re.sub(r"(https?|ftp):\/\/[^\s/$.?#].[^\s]*", "", cleaned_text)
+        cleaned_text = re.sub(r"0x[\da-fA-F]+", "<hex>", cleaned_text)
+        cleaned_text = re.sub(r"\b[0-9a-fA-F]{16}\b", "<hex>", cleaned_text)
+        cleaned_text = re.sub(
+            r"\b\d{2}:\d{2}:\d{2}:\d{4,} GMT\b",
+            "<timestamp>",
+            cleaned_text,
+        )
+        cleaned_text = re.sub(
+            r"\b\d{2}:\d{2}:\d{2}(\.\d{2,3})?\b",
+            "<timestamp>",
+            cleaned_text,
+        )
+        cleaned_text = re.sub(
+            r"\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\b",
+            "<timestamp>",
+            cleaned_text,
+        )
+        cleaned_text = re.sub(r"```", "", cleaned_text)
+        cleaned_text = re.sub(r"-{3,}", "", cleaned_text)
+        cleaned_text = re.sub(r"[\*#=+\-]{3,}", "", cleaned_text)
+
+        cleaned_text = re.sub(r"(\r?\n)+", "\n", cleaned_text)
+        cleaned_text = re.sub(r"(?![\r\n])\s+", " ", cleaned_text)
+        cleaned_text = cleaned_text.strip()
+
+        return cleaned_text
