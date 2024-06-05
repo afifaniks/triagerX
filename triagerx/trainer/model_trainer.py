@@ -2,8 +2,6 @@ import numpy as np
 import torch
 from loguru import logger
 from sklearn.metrics import precision_recall_fscore_support
-from torch import nn
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from triagerx.trainer.train_config import TrainConfig
@@ -75,10 +73,8 @@ class ModelTrainer:
         for train_input, train_label in tqdm(dataloader, desc="Training Steps"):
             optimizer.zero_grad()
             train_label = train_label.to(self._config.device)
-            mask = train_input["attention_mask"].squeeze(1).to(self._config.device)
-            input_id = train_input["input_ids"].squeeze(1).to(self._config.device)
-            tok_type = train_input["token_type_ids"].squeeze(1).to(self._config.device)
-            output = model(input_id, mask, tok_type)
+
+            output = model(train_input)
 
             batch_loss = criterion(output, train_label.long())
             total_loss_train += batch_loss.item()
@@ -108,12 +104,8 @@ class ModelTrainer:
         with torch.no_grad():
             for val_input, val_label in tqdm(dataloader, desc="Validation Steps"):
                 val_label = val_label.to(self._config.device)
-                mask = val_input["attention_mask"].squeeze(1).to(self._config.device)
-                input_id = val_input["input_ids"].squeeze(1).to(self._config.device)
-                tok_type = (
-                    val_input["token_type_ids"].squeeze(1).to(self._config.device)
-                )
-                output = model(input_id, mask, tok_type)
+
+                output = model(val_input)
 
                 batch_loss = criterion(output, val_label.long())
                 total_loss_val += batch_loss.item()

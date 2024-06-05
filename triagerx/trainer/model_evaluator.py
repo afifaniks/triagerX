@@ -29,11 +29,7 @@ class ModelEvaluator:
         with torch.no_grad():
             for test_input, test_label in tqdm(dataloader, desc="Test Steps"):
                 test_label = test_label.to(device)
-                mask = test_input["attention_mask"].squeeze(1).to(device)
-                input_id = test_input["input_ids"].squeeze(1).to(device)
-                tok_type = test_input["token_type_ids"].squeeze(1).to(device)
-
-                output = model(input_id, mask, tok_type)
+                output = model(test_input)
                 output = torch.sum(torch.stack(output), 0)
 
                 _, top_k_wo_sim = output.topk(topk_index, 1, True, True)
