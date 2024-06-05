@@ -63,7 +63,11 @@ class LBTPDeberta(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input_ids, attention_mask, tok_type):
+    def forward(self, inputs):
+        input_ids = inputs["input_ids"].squeeze(1).to(self._config.device)
+        attention_mask = inputs["attention_mask"].squeeze(1).to(self._config.device)
+        tok_type = inputs["token_type_ids"].squeeze(1).to(self._config.device)
+
         outputs = []
 
         base_out = self.base_model(
