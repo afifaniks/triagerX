@@ -15,10 +15,10 @@ from transformers import get_linear_schedule_with_warmup
 
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
+from triagerx.dataset import EnsembleDataset
 from triagerx.dataset.text_processor import TextProcessor
-from triagerx.dataset.triage_dataset import TriageDataset
 from triagerx.loss.loss_functions import *
-from triagerx.model.lbt_p_deberta import LBTPDeberta
+from triagerx.model.triagerx_dev_model import TriagerxDevModel
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -43,8 +43,11 @@ use_special_tokens = config.get("use_special_tokens")
 use_summary = config.get("use_summary")
 use_description = config.get("use_description")
 dataset_path = config.get("dataset_path")
-base_transformer_model = config.get("base_transformer_model")
+base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
+num_classifiers = config.get("num_classifiers")
+max_tokens = config.get("max_tokens")
+
 seed = args.seed
 
 num_cv = config.get("total_folds")
@@ -78,7 +81,6 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-max_tokens = 256
 log_manager = EpochLogManager(wandb_config=wandb_config)
 torch.manual_seed(seed=seed)
 
@@ -151,28 +153,28 @@ weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 logger.debug("Modeling network...")
-model = LBTPDeberta(
-    len(df_train.owner_id.unique()),
+model = TriagerxDevModel(
+    output_size=len(df_train.owner_id.unique()),
     unfrozen_layers=unfrozen_layers,
+    num_classifiers=num_classifiers,
+    base_models=base_transformer_models,
     dropout=dropout,
-    base_model=base_transformer_model,
     max_tokens=max_tokens,
 )
-criterion = CombinedLoss()
-tokenizer = model.tokenizer()
 
-if use_special_tokens:
-    special_tokens = TextProcessor.SPECIAL_TOKENS
-    logger.debug("Resizing model embedding for new special tokens...")
-    special_tokens_dict = {"additional_special_tokens": list(special_tokens.values())}
-    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
-    model.base_model.resize_token_embeddings(len(tokenizer))
+criterion = CombinedLoss()
+tokenizer1 = model.tokenizer(0)
+tokenizer2 = model.tokenizer(1)
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = TriageDataset(df_train, tokenizer, "text", "owner_id", max_length=max_tokens)
-val_ds = TriageDataset(df_test, tokenizer, "text", "owner_id", max_length=max_tokens)
+train_ds = EnsembleDataset(
+    df_train, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
+)
+val_ds = EnsembleDataset(
+    df_test, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
+)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
