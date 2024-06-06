@@ -86,6 +86,12 @@ class TriagerxDevModel(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
+        # Initialize learnable weights for each base model
+        self.model_weights = nn.ParameterList(
+            [nn.Parameter(torch.ones(self._num_classifiers)) for _ in self.base_models]
+        )
+        self.classifier_weights = nn.Parameter(torch.ones(self._num_classifiers))
+
     def forward(self, inputs):
         # Process input data for each base model
         inputs = [
@@ -110,9 +116,12 @@ class TriagerxDevModel(nn.Module):
 
         # Concatenate hidden states and apply convolutional blocks and classifiers
         for i in range(self._num_classifiers):
-            concatenated_hidden_states = torch.cat(
-                [hidden_states[idx][i] for idx in range(len(self.base_models))], dim=-1
-            )
+            # Apply learnable weights to hidden states from each base model
+            weighted_hidden_states = [
+                self.model_weights[idx][i] * hidden_states[idx][i]
+                for idx in range(len(self.base_models))
+            ]
+            concatenated_hidden_states = torch.cat(weighted_hidden_states, dim=-1)
             batch_size, sequence_length, hidden_size = concatenated_hidden_states.size()
             x = [
                 conv(
@@ -125,7 +134,7 @@ class TriagerxDevModel(nn.Module):
             # Concatenating outputs of the convolutional blocks of different filter sizes
             x = torch.cat(x, dim=1)
             x = self.dropout(x)
-            x = self.classifiers[i](x)
+            x = self.classifier_weights[i] * self.classifiers[i](x)
 
             outputs.append(x)
 
