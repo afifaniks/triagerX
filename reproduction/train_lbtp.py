@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
@@ -13,6 +14,34 @@ from transformers import RobertaConfig, RobertaModel, RobertaTokenizer
 
 import wandb
 from triagerx.trainer.model_evaluator import ModelEvaluator
+
+parser = argparse.ArgumentParser(description="Script to run TensorFlow model training")
+
+# Define arguments
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path to the dataset CSV file"
+)
+parser.add_argument(
+    "--embedding_model_weights",
+    type=str,
+    required=True,
+    help="Directory for the embedding model weights",
+)
+parser.add_argument("--block", type=int, required=True, default=9, help="Block number")
+parser.add_argument(
+    "--output_model_weights",
+    type=str,
+    required=True,
+    help="Path for saving the output model weights",
+)
+
+# Parse arguments
+args = parser.parse_args()
+
+dataset_path = args.dataset_path
+embedding_model_weights_dir = args.embedding_model_weights
+block = args.block
+output_model_weights = args.output_model_weights
 
 
 class TriageDataset(Dataset):
@@ -213,8 +242,6 @@ def clean_data(df):
     return df
 
 
-dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv"
-
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
 df = df[df["owner"].notna()]
@@ -225,7 +252,7 @@ print(f"Total number of issues: {len(df)}")
 num_cv = 10
 # sample_threshold=20 # Threshold to filter developers
 samples_per_block = len(df) // num_cv
-block = 9
+
 sliced_df = df[: samples_per_block * (block + 1)]
 
 print(f"Samples per block: {samples_per_block}, Selected block: {block}")
@@ -262,12 +289,6 @@ X_df["owner_id"] = X_df["owner"].apply(lambda owner: lbl2idx[owner])
 y_df["owner_id"] = y_df["owner"].apply(lambda owner: lbl2idx[owner])
 
 print("Load pretrained embedding model")
-embedding_model_weights_dir = (
-    "/work/disa_lab/projects/triagerx/models/distillation/lbtp_base.pt"
-)
-output_model_weights = (
-    f"/work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_gc_block{block}.pt"
-)
 model_config = RobertaConfig.from_pretrained("roberta-large")
 model_config.num_hidden_layers = 3
 model_config.output_hidden_states = True
@@ -284,7 +305,7 @@ batch_size = 10
 
 wandb_config = {
     "project": "lbtp_reproduction",
-    "name": f"lbtp_gc_block{block}",
+    "name": f"lbtp_mc_block{block}",
     "config": {
         "learning_rate": learning_rate,
         "dataset": "openj9",
@@ -397,16 +418,16 @@ for epoch_num in range(epochs):
         best_loss = val_loss
 
 
-print("Starting testing...")
-model.load_state_dict(torch.load(output_model_weights))
-model_evaluator = ModelEvaluator()
-model_evaluator.evaluate(
-    model=model,
-    dataloader=val_dataloader,
-    device=device,
-    run_name=f"lbtp_gc_block{block}",
-    topk_index=10,
-    weights_save_location=output_model_weights,
-    test_report_location="lbtp_reproduction.json",
-)
-print("Finished testing.")
+# print("Starting testing...")
+# model.load_state_dict(torch.load(output_model_weights))
+# model_evaluator = ModelEvaluator()
+# model_evaluator.evaluate(
+#     model=model,
+#     dataloader=val_dataloader,
+#     device=device,
+#     run_name=f"lbtp_mc_block{block}",
+#     topk_index=10,
+#     weights_save_location=output_model_weights,
+#     test_report_location="lbtp_reproduction.json",
+# )
+# print("Finished testing.")
