@@ -1,5 +1,6 @@
 import pandas as pd
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 
 class DistillationDataset(Dataset):
@@ -8,17 +9,18 @@ class DistillationDataset(Dataset):
         df: pd.DataFrame,
         tokenizer,
         feature: str,
+        max_length: int = 256,
     ):
         self.tokenizer = tokenizer
         self.texts = [
             self.tokenizer(
                 row[feature],
                 padding="max_length",
-                max_length=512,
+                max_length=max_length,
                 truncation=True,
                 return_tensors="pt",
             )
-            for _, row in df.iterrows()
+            for _, row in tqdm(df.iterrows(), desc="Processing dataset")
         ]
 
     def __len__(self):
