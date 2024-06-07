@@ -199,15 +199,14 @@ def log_step(
     topk,
 ):
     log_dict = {
-        "epoch_num": epoch_num,
         "train_acc": total_acc_train / len(train_data),
         "val_acc": total_acc_val / len(validation_data),
         "train_loss": total_loss_train / len(train_data),
         "val_loss": total_loss_val / len(validation_data),
         "precision": precision,
         "recall": recall,
-        "f1_score": f1_score,
-        "top10": topk,
+        "f1-score": f1_score,
+        "top10_acc": topk,
     }
 
     log = f"Epochs: {epoch_num + 1} | Train Loss: {log_dict['train_loss']: .3f} \
