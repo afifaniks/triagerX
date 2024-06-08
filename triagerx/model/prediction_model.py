@@ -12,9 +12,13 @@ class PredictionModel(nn.Module, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def tokenize_text(text):
+    def tokenize_text(self, text):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_label_map():
+    def tokenizer(self, *args):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_label_map(self):
         raise NotImplementedError()
