@@ -1,6 +1,7 @@
-from typing import List, Union
+from typing import List
 
 from triagerx.model.cnn_transformer import CNNTransformer
+from triagerx.model.prediction_model import PredictionModel
 from triagerx.model.triagerx_dev_model import TriagerxDevModel
 
 
@@ -30,7 +31,7 @@ class ModelFactory:
         dropout: float = 0.1,
         max_tokens: int = 512,
         num_filters: int = 256,
-    ) -> Union[CNNTransformer, TriagerxDevModel]:
+    ) -> PredictionModel:
         if model_key not in ModelFactory.DEFINED_MODELS:
             raise ModelNotFoundError(
                 model_key, list(ModelFactory.DEFINED_MODELS.keys())
