@@ -4,19 +4,21 @@ from loguru import logger
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
+from triagerx.model.prediction_model import PredictionModel
+
 
 class TriageDataset(Dataset):
     def __init__(
         self,
         df: pd.DataFrame,
-        tokenizer: PreTrainedTokenizer,
+        model: PredictionModel,
         feature: str,
         target: str,
         max_length: int = 512,
     ):
         logger.debug("Generating torch dataset...")
         logger.debug(f"Dataset feature column: {feature}, target column: {target}")
-        self.tokenizer = tokenizer
+        self.tokenizer = model.tokenizer()
         self.labels = [label for label in df[target]]
         logger.debug("Tokenizing texts...")
         self.texts = [
