@@ -17,7 +17,7 @@ class CNNTransformer(PredictionModel):
         num_filters=256,
         label_map=None,
     ) -> None:
-        super().__init__()
+        super(CNNTransformer, self).__init__()
         self.base_model = AutoModel.from_pretrained(
             base_model, output_hidden_states=True
         )

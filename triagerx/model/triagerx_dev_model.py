@@ -18,7 +18,7 @@ class TriagerxDevModel(PredictionModel):
         num_filters=256,
         label_map=None,
     ) -> None:
-        super().__init__()
+        super(TriagerxDevModel, self).__init__()
 
         # Initialize base models and their respective tokenizers
         logger.debug(f"Loading base transformer models: {base_models}")
