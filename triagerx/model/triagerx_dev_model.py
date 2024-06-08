@@ -6,7 +6,7 @@ from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 from triagerx.model.prediction_model import PredictionModel
 
 
-class TriagerxDevModel(nn.Module, PredictionModel):
+class TriagerxDevModel(PredictionModel):
     def __init__(
         self,
         output_size,

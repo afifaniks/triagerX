@@ -1,4 +1,6 @@
-from typing import List
+from typing import Dict, List, Optional
+
+from loguru import logger
 
 from triagerx.model.cnn_transformer import CNNTransformer
 from triagerx.model.prediction_model import PredictionModel
@@ -31,6 +33,7 @@ class ModelFactory:
         dropout: float = 0.1,
         max_tokens: int = 512,
         num_filters: int = 256,
+        label_map: Optional[Dict[int, str]] = None,
     ) -> PredictionModel:
         if model_key not in ModelFactory.DEFINED_MODELS:
             raise ModelNotFoundError(
@@ -39,12 +42,21 @@ class ModelFactory:
 
         model_class = ModelFactory.DEFINED_MODELS[model_key]
 
-        return model_class(
-            output_size=output_size,
-            unfrozen_layers=unfrozen_layers,
-            num_classifiers=num_classifiers,
-            dropout=dropout,
-            base_model=base_models[0] if model_key == "lbtp-deberta" else base_models,
-            max_tokens=max_tokens,
-            num_filters=num_filters,
-        )
+        logger.debug(f"Instantiating model of class: {model_class}")
+
+        model_params = {
+            "output_size": output_size,
+            "unfrozen_layers": unfrozen_layers,
+            "num_classifiers": num_classifiers,
+            "dropout": dropout,
+            "max_tokens": max_tokens,
+            "num_filters": num_filters,
+            "label_map": label_map,
+        }
+
+        if model_key == "cnn-transformer":
+            model_params["base_model"] = base_models[0]
+        else:
+            model_params["base_models"] = base_models
+
+        return model_class(**model_params)

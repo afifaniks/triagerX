@@ -1,12 +1,11 @@
 import torch
-import torch.nn.functional as F
 from torch import nn
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 
 from triagerx.model.prediction_model import PredictionModel
 
 
-class CNNTransformer(nn.Module, PredictionModel):
+class CNNTransformer(PredictionModel):
     def __init__(
         self,
         output_size,
@@ -69,15 +68,13 @@ class CNNTransformer(nn.Module, PredictionModel):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs):
-        input_ids = inputs["input_ids"].squeeze(1).to(self._config.device)
-        attention_mask = inputs["attention_mask"].squeeze(1).to(self._config.device)
-        tok_type = inputs["token_type_ids"].squeeze(1).to(self._config.device)
-
+        inputs = {
+            key: value.squeeze(1).to(next(self.parameters()).device)
+            for key, value in inputs.items()
+        }
         outputs = []
 
-        base_out = self.base_model(
-            input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask
-        )
+        base_out = self.base_model(**inputs)
         # pooler_out = base_out.last_hidden_state.squeeze(0)
         hidden_states = base_out.hidden_states[-self._num_classifiers :]
 
@@ -96,7 +93,7 @@ class CNNTransformer(nn.Module, PredictionModel):
 
         return outputs
 
-    def tokenizer(self) -> AutoTokenizer:
+    def tokenizer(self) -> PreTrainedTokenizer:
         return self._tokenizer
 
     def tokenize_text(self, text):
