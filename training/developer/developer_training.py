@@ -16,10 +16,11 @@ from transformers import get_linear_schedule_with_warmup
 
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
-from triagerx.dataset import EnsembleDataset
+
+from triagerx.dataset import EnsembleDataset, TriageDataset
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.loss.loss_functions import *
-from triagerx.model.triagerx_dev_model import TriagerxDevModel
+from triagerx.model.model_factory import ModelFactory
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -52,6 +53,7 @@ val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
 max_tokens = config.get("max_tokens")
+model_key = config.get("model_key")
 learning_rate = config.get("learning_rate")
 epochs = config.get("epochs")
 batch_size = config.get("batch_size")
@@ -136,15 +138,15 @@ components = {
     "comp:gc": gc_users,
 }
 
-expected_users = [user for user_list in components.values() for user in user_list]
-df = df[df["owner"].isin(expected_users)]
+# expected_users = [user for user_list in components.values() for user in user_list]
+# df = df[df["owner"].isin(expected_users)]
 logger.info(f"Total issues after developer filtering: {len(df)}")
 
 df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
-sample_threshold = 10
+sample_threshold = 20
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
 df_train = df_train[df_train["owner"].isin(filtered_developers)]
@@ -163,18 +165,20 @@ logger.info(f"Train dataset size: {len(df_train)}")
 logger.info(f"Test dataset size: {len(df_test)}")
 
 
-# # Generate component ids
+# # Generate label ids
 lbl2idx = {}
+idx2lbl = {}
 
 train_owners = sorted(train_owners)
 
 for idx, dev in enumerate(train_owners):
     lbl2idx[dev] = idx
+    idx2lbl[idx] = dev
 
 df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
 df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
 
-assert set(df_train.owner.unique()) == set(df_test.owner.unique())
+# assert set(df_train.owner.unique()) == set(df_test.owner.unique())
 
 
 class_counts = np.bincount(df_train["owner_id"])
@@ -186,19 +190,21 @@ weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 logger.debug("Modeling network...")
-model = TriagerxDevModel(
+model = ModelFactory.get_model(
+    model_key=model_key,
     output_size=len(df_train.owner_id.unique()),
     unfrozen_layers=unfrozen_layers,
     num_classifiers=num_classifiers,
     base_models=base_transformer_models,
     dropout=dropout,
     max_tokens=max_tokens,
+    label_map=idx2lbl,
 )
 
 criterion = CombinedLoss()
 
-tokenizer1 = model.tokenizer(0)
-tokenizer2 = model.tokenizer(1)
+tokenizer1 = model.tokenizer()
+# tokenizer2 = model.tokenizer(1)
 
 if use_special_tokens:
     special_tokens = TextProcessor.SPECIAL_TOKENS
@@ -210,12 +216,10 @@ if use_special_tokens:
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = EnsembleDataset(
-    df_train, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
+train_ds = TriageDataset(
+    df_train, tokenizer1, "text", "owner_id", max_length=max_tokens
 )
-val_ds = EnsembleDataset(
-    df_test, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
-)
+val_ds = TriageDataset(df_test, tokenizer1, "text", "owner_id", max_length=max_tokens)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
@@ -244,7 +248,7 @@ train_config = TrainConfig(
     epochs=epochs,
     output_path=weights_save_location,
     device=device,
-    topk_indices=3,
+    topk_indices=topk_indices,
     log_manager=log_manager,
     early_stopping_patience=early_stopping_patience,
     scheduler=scheduler,
