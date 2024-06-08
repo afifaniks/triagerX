@@ -3,8 +3,10 @@ import torch.nn.functional as F
 from torch import nn
 from transformers import AutoModel, AutoTokenizer
 
+from triagerx.model.prediction_model import PredictionModel
 
-class LBTPDeberta(nn.Module):
+
+class CNNTransformer(nn.Module, PredictionModel):
     def __init__(
         self,
         output_size,
@@ -13,12 +15,15 @@ class LBTPDeberta(nn.Module):
         dropout=0.1,
         base_model="microsoft/deberta-large",
         max_tokens=512,
+        num_filters=256,
+        label_map=None,
     ) -> None:
         super().__init__()
         self.base_model = AutoModel.from_pretrained(
             base_model, output_hidden_states=True
         )
         self._tokenizer = AutoTokenizer.from_pretrained(base_model)
+        self._label_map = label_map
 
         # Freeze embedding layers
         for p in self.base_model.embeddings.parameters():
@@ -30,7 +35,7 @@ class LBTPDeberta(nn.Module):
                 p.requires_grad = False
 
         filter_sizes = [3, 4, 5, 6]
-        self._num_filters = 256
+        self._num_filters = num_filters
         self._num_classifiers = num_classifiers
         self._max_tokens = max_tokens
         self._embed_size = self.base_model.config.hidden_size
@@ -93,3 +98,18 @@ class LBTPDeberta(nn.Module):
 
     def tokenizer(self) -> AutoTokenizer:
         return self._tokenizer
+
+    def tokenize_text(self, text):
+        return [
+            tokenizer(
+                text,
+                padding="max_length",
+                max_length=self._max_tokens,
+                truncation=True,
+                return_tensors="pt",
+            )
+            for tokenizer in self.tokenizers
+        ]
+
+    def get_label_map(self):
+        return self._label_map
