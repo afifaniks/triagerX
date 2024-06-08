@@ -40,10 +40,12 @@ class ModelTrainer:
                 "f1-score": f1_score,
                 "val_loss": total_loss_val,
                 "val_acc": total_acc_val,
-                f"top{self._config.topk_indices}_acc": topk,
                 "train_loss": total_loss_train,
                 "train_acc": total_acc_train,
             }
+            for k_index, k_score in topk.items():
+                log_metrics[f"top{k_index}_acc"] = k_score
+
             self._config.log_manager.log_epoch(
                 epoch_num=epoch_num,
                 total_epochs=self._config.epochs,
@@ -96,7 +98,8 @@ class ModelTrainer:
     def _validate_one_epoch(self, model, dataloader, criterion):
         total_acc_val = 0
         total_loss_val = 0
-        correct_top_k = 0
+        topk_indices = self._config.topk_indices
+        correct_top_k = {k: 0 for k in topk_indices}
         all_preds = []
         all_labels = []
 
@@ -111,17 +114,13 @@ class ModelTrainer:
                 total_loss_val += batch_loss.item()
 
                 output = torch.sum(torch.stack(output), 0)
-                _, top_k_predictions = output.topk(
-                    self._config.topk_indices, 1, True, True
-                )
+                # Max topk index will have the other k as well
+                _, top_k_predictions = output.topk(max(topk_indices), 1, True, True)
                 top_k_predictions = top_k_predictions.t()
-                correct_top_k += (
-                    top_k_predictions.eq(
-                        val_label.view(1, -1).expand_as(top_k_predictions)
+                for k in topk_indices:
+                    correct_top_k[k] += self._count_correct_predictions(
+                        top_k_predictions[:k], val_label
                     )
-                    .sum()
-                    .item()
-                )
                 acc = (output.argmax(dim=1) == val_label).sum().item()
                 all_preds.append(output.argmax(dim=1).cpu().numpy())
                 all_labels.append(val_label.cpu().numpy())
@@ -132,11 +131,29 @@ class ModelTrainer:
         precision, recall, f1_score, _ = precision_recall_fscore_support(
             all_labels, all_preds, average="macro"
         )
-        topk = correct_top_k / len(dataloader.dataset)
+        accuracy_top_k = {
+            k: correct_top_k[k] / len(dataloader.dataset) for k in topk_indices
+        }
         total_loss_val = total_loss_val / len(dataloader.dataset)
         total_acc_val = total_acc_val / len(dataloader.dataset)
 
-        return total_acc_val, total_loss_val, precision, recall, f1_score, topk
+        return (
+            total_acc_val,
+            total_loss_val,
+            precision,
+            recall,
+            f1_score,
+            accuracy_top_k,
+        )
 
     def save_checkpoint(self, model, output_path):
         torch.save(model.state_dict(), output_path)
+
+    @staticmethod
+    def _count_correct_predictions(top_k_predictions, val_label):
+        """Count correct predictions for a given top-k setting."""
+        return (
+            top_k_predictions.eq(val_label.view(1, -1).expand_as(top_k_predictions))
+            .sum()
+            .item()
+        )
