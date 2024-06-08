@@ -17,10 +17,9 @@ from transformers import get_linear_schedule_with_warmup
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
 
-from triagerx.dataset import EnsembleDataset, TriageDataset
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.loss.loss_functions import *
-from triagerx.model.model_factory import ModelFactory
+from triagerx.model.module_factory import DatasetFactory, ModelFactory
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -203,23 +202,15 @@ model = ModelFactory.get_model(
 
 criterion = CombinedLoss()
 
-tokenizer1 = model.tokenizer()
-# tokenizer2 = model.tokenizer(1)
-
-if use_special_tokens:
-    special_tokens = TextProcessor.SPECIAL_TOKENS
-    logger.debug("Resizing model embedding for new special tokens...")
-    special_tokens_dict = {"additional_special_tokens": list(special_tokens.values())}
-    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
-    model.base_model.resize_token_embeddings(len(tokenizer))
-
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = TriageDataset(
-    df_train, tokenizer1, "text", "owner_id", max_length=max_tokens
+train_ds = DatasetFactory.get_dataset(
+    df_train, model, "text", "owner_id", max_length=max_tokens
 )
-val_ds = TriageDataset(df_test, tokenizer1, "text", "owner_id", max_length=max_tokens)
+val_ds = DatasetFactory.get_dataset(
+    df_test, model, "text", "owner_id", max_length=max_tokens
+)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
@@ -272,7 +263,7 @@ model_evaluator.evaluate(
     dataloader=val_dataloader,
     device=device,
     run_name=run_name,
-    topk_index=topk_indices,
+    topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
 )
