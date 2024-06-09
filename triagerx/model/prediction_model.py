@@ -1,0 +1,21 @@
+from abc import ABC, abstractmethod
+
+import torch.nn as nn
+
+
+class PredictionModel(nn.Module, ABC):
+    @abstractmethod
+    def forward(self, inputs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def tokenize_text(self, text):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def tokenizer(self, *args):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_label_map(self):
+        raise NotImplementedError()

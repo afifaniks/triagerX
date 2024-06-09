@@ -1,10 +1,11 @@
 import torch
-import torch.nn.functional as F
 from torch import nn
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
+
+from triagerx.model.prediction_model import PredictionModel
 
 
-class LBTPDeberta(nn.Module):
+class CNNTransformer(PredictionModel):
     def __init__(
         self,
         output_size,
@@ -13,12 +14,15 @@ class LBTPDeberta(nn.Module):
         dropout=0.1,
         base_model="microsoft/deberta-large",
         max_tokens=512,
+        num_filters=256,
+        label_map=None,
     ) -> None:
-        super().__init__()
+        super(CNNTransformer, self).__init__()
         self.base_model = AutoModel.from_pretrained(
             base_model, output_hidden_states=True
         )
         self._tokenizer = AutoTokenizer.from_pretrained(base_model)
+        self._label_map = label_map
 
         # Freeze embedding layers
         for p in self.base_model.embeddings.parameters():
@@ -30,7 +34,7 @@ class LBTPDeberta(nn.Module):
                 p.requires_grad = False
 
         filter_sizes = [3, 4, 5, 6]
-        self._num_filters = 256
+        self._num_filters = num_filters
         self._num_classifiers = num_classifiers
         self._max_tokens = max_tokens
         self._embed_size = self.base_model.config.hidden_size
@@ -64,15 +68,13 @@ class LBTPDeberta(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs):
-        input_ids = inputs["input_ids"].squeeze(1).to(self._config.device)
-        attention_mask = inputs["attention_mask"].squeeze(1).to(self._config.device)
-        tok_type = inputs["token_type_ids"].squeeze(1).to(self._config.device)
-
+        inputs = {
+            key: value.squeeze(1).to(next(self.parameters()).device)
+            for key, value in inputs.items()
+        }
         outputs = []
 
-        base_out = self.base_model(
-            input_ids=input_ids, token_type_ids=tok_type, attention_mask=attention_mask
-        )
+        base_out = self.base_model(**inputs)
         # pooler_out = base_out.last_hidden_state.squeeze(0)
         hidden_states = base_out.hidden_states[-self._num_classifiers :]
 
@@ -91,5 +93,20 @@ class LBTPDeberta(nn.Module):
 
         return outputs
 
-    def tokenizer(self) -> AutoTokenizer:
+    def tokenizer(self) -> PreTrainedTokenizer:
         return self._tokenizer
+
+    def tokenize_text(self, text):
+        return [
+            tokenizer(
+                text,
+                padding="max_length",
+                max_length=self._max_tokens,
+                truncation=True,
+                return_tensors="pt",
+            )
+            for tokenizer in self.tokenizers
+        ]
+
+    def get_label_map(self):
+        return self._label_map

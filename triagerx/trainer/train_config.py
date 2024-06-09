@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 from torch import nn
@@ -19,7 +19,7 @@ class TrainConfig(BaseModel):
     epochs: int
     output_path: str
     device: str
-    topk_indices: int
+    topk_indices: List[int]
     log_manager: EpochLogManager
     early_stopping_patience: Optional[int] = None
     scheduler: Optional[Any] = None

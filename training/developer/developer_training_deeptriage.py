@@ -15,10 +15,9 @@ from transformers import get_linear_schedule_with_warmup
 
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
-from triagerx.dataset import EnsembleDataset
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.loss.loss_functions import *
-from triagerx.model.triagerx_dev_model import TriagerxDevModel
+from triagerx.model.module_factory import DatasetFactory, ModelFactory
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -47,6 +46,7 @@ base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
 num_classifiers = config.get("num_classifiers")
 max_tokens = config.get("max_tokens")
+model_key = config.get("model_key")
 
 seed = args.seed
 
@@ -133,11 +133,13 @@ logger.info(f"Test dataset size: {len(df_test)}")
 
 # # Generate component ids
 lbl2idx = {}
+idx2lbl = {}
 
 train_owners = sorted(train_owners)
 
 for idx, dev in enumerate(train_owners):
     lbl2idx[dev] = idx
+    idx2lbl[idx] = dev
 
 df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
 df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
@@ -153,27 +155,28 @@ weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 logger.debug("Modeling network...")
-model = TriagerxDevModel(
+model = ModelFactory.get_model(
+    model_key=model_key,
     output_size=len(df_train.owner_id.unique()),
     unfrozen_layers=unfrozen_layers,
     num_classifiers=num_classifiers,
     base_models=base_transformer_models,
     dropout=dropout,
     max_tokens=max_tokens,
+    label_map=idx2lbl,
 )
 
 criterion = CombinedLoss()
-tokenizer1 = model.tokenizer(0)
-tokenizer2 = model.tokenizer(1)
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = EnsembleDataset(
-    df_train, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
+logger.debug("preparing datasets...")
+train_ds = DatasetFactory.get_dataset(
+    df_train, model, "text", "owner_id", max_length=max_tokens
 )
-val_ds = EnsembleDataset(
-    df_test, tokenizer1, tokenizer2, "text", "owner_id", max_length=max_tokens
+val_ds = DatasetFactory.get_dataset(
+    df_test, model, "text", "owner_id", max_length=max_tokens
 )
 
 train_dataloader = DataLoader(
@@ -227,7 +230,7 @@ model_evaluator.evaluate(
     dataloader=val_dataloader,
     device=device,
     run_name=run_name,
-    topk_index=topk_indices,
+    topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
 )

@@ -244,12 +244,12 @@ class TextProcessor:
             "<timestamp>",
             cleaned_text,
         )
-        cleaned_text = re.sub(r"```", "", cleaned_text)
-        cleaned_text = re.sub(r"-{3,}", "", cleaned_text)
-        cleaned_text = re.sub(r"[\*#=+\-]{3,}", "", cleaned_text)
+        # cleaned_text = re.sub(r"```", "", cleaned_text)
+        # cleaned_text = re.sub(r"-{3,}", "", cleaned_text)
+        # cleaned_text = re.sub(r"[\*#=+\-]{3,}", "", cleaned_text)
 
-        cleaned_text = re.sub(r"(\r?\n)+", "\n", cleaned_text)
-        cleaned_text = re.sub(r"(?![\r\n])\s+", " ", cleaned_text)
+        # cleaned_text = re.sub(r"(\r?\n)+", "\n", cleaned_text)
+        # cleaned_text = re.sub(r"(?![\r\n])\s+", " ", cleaned_text)
         cleaned_text = cleaned_text.strip()
 
         return cleaned_text
