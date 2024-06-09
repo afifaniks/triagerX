@@ -11,10 +11,10 @@ val_size: 0.2
 test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
-epochs: 50
+epochs: 25
 batch_size: 10
 max_tokens: 256
-early_stopping_patience: 7
+early_stopping_patience: null
 topk_indices:
   - 3
   - 5

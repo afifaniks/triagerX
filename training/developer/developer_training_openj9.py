@@ -32,7 +32,9 @@ parser = argparse.ArgumentParser(description="Training script arguments")
 parser.add_argument(
     "--config", type=str, required=True, help="Path to training config file"
 )
-parser.add_argument("--dataset_path", type=int, required=True, help="Path of the dataset")
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path of the dataset"
+)
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
 args = parser.parse_args()
 
@@ -45,7 +47,6 @@ dataset_path = args.dataset_path
 seed = args.seed
 
 use_description = config.get("use_description")
-dataset_path = config.get("dataset_path")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
 num_classifiers = config.get("num_classifiers")

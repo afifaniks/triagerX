@@ -30,7 +30,9 @@ parser = argparse.ArgumentParser(description="Training script arguments")
 parser.add_argument(
     "--config", type=str, required=True, help="Path to training config file"
 )
-parser.add_argument("--dataset_path", type=int, required=True, help="Path of the dataset")
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path of the dataset"
+)
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
 args = parser.parse_args()
 
