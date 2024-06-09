@@ -67,6 +67,12 @@ class ModelTrainer:
                 )
                 self.save_checkpoint(model, self._config.output_path)
 
+        last_checkpoint_path = (
+            self._config.output_path.split(".")[0] + f"_last_epoch_{epoch_num}.pt"
+        )
+        logger.debug("Saving the last checkpoint")
+        self.save_checkpoint(model, last_checkpoint_path)
+
     def _train_one_epoch(self, model, dataloader, criterion, optimizer, scheduler):
         total_acc_train = 0
         total_loss_train = 0
