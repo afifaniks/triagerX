@@ -20,7 +20,7 @@ topk_indices:
   - 5
   - 10
 model_key: "triagerx"
-run_name: "triagerx_ensemble_u3_42_classes"
+run_name: "triagerx_ensemble_u3_42_classes_5678fs"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
