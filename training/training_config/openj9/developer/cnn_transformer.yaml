@@ -17,7 +17,7 @@ topk_indices:
   - 5
   - 10
 run_name: "cnn_deberta-base_u3_42_classes"
-weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
 architecture: "CNN Deberta"

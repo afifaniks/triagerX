@@ -19,7 +19,7 @@ topk_indices:
   - 5
   - 10
 run_name: "cnn_deberta-large_dt_mc"
-weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "lbtp_reproduction"
 architecture: "Deberta Large - CNN"
