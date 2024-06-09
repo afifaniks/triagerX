@@ -4,7 +4,7 @@
 #SBATCH -n 1
 #SBATCH --mem=80G
 #SBATCH --partition=disa --gres=gpu:1
-#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/%j.out
+#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/openj9_dev_%j.out
 
 # Activate conda environment
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -24,6 +24,9 @@ seeds=(66)
 # Loop through each seed and config combination
 for seed in "${seeds[@]}"; do
     for config in "${configs[@]}"; do
-        python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/$config --seed $seed
+        python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training.py \
+            --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/developer/$config \
+            --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/openj9_dataset_6_7_24.csv \
+            --seed $seed
     done
 done
