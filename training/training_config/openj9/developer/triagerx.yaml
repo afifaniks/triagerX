@@ -1,7 +1,6 @@
 use_special_tokens: false
 use_description: true
 use_summary: false
-dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_dataset_6_7_24.csv"
 base_transformer_models: 
  - "microsoft/deberta-large"
  - "roberta-base"
@@ -20,7 +19,7 @@ topk_indices:
   - 5
   - 10
 model_key: "triagerx"
-run_name: "triagerx_ensemble_u3_42_classes_5678fs"
+run_name: "triagerx_ensemble_u3_42_classes"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"

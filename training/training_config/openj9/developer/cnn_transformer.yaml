@@ -1,14 +1,11 @@
 use_special_tokens: false
 use_description: true
 use_summary: false
-dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv"
 base_transformer_models: 
  - "microsoft/deberta-base"
- - "roberta-base"
+model_key: "cnn-transformer"
 unfrozen_layers: 3
 num_classifiers: 3
-total_folds: 10
-fold_number: 9
 val_size: 0.2
 test_size: 0.2
 dropout: 0.2
@@ -17,10 +14,13 @@ epochs: 50
 batch_size: 10
 max_tokens: 256
 early_stopping_patience: 10
-topk_indices: 10
-run_name: "triagerx_ensemble_dt_gc"
+topk_indices: 
+  - 3
+  - 5
+  - 10
+run_name: "cnn_deberta-base_u3_42_classes"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
-wandb_project: "lbtp_reproduction"
-architecture: "TriagerxDevModel"
-dataset: "Deeptriage Issues"
+wandb_project: "openj9-developers"
+architecture: "CNN Deberta"
+dataset: "Openj9 Issues"
