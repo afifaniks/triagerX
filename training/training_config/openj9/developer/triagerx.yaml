@@ -1,8 +1,6 @@
-use_special_tokens: false
 use_description: true
-use_summary: false
 base_transformer_models: 
- - "microsoft/deberta-large"
+ - "microsoft/deberta-base"
  - "roberta-base"
 unfrozen_layers: 3
 num_classifiers: 3

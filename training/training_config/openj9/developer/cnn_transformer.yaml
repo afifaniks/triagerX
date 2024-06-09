@@ -1,6 +1,4 @@
-use_special_tokens: false
 use_description: true
-use_summary: false
 base_transformer_models: 
  - "microsoft/deberta-base"
 model_key: "cnn-transformer"
