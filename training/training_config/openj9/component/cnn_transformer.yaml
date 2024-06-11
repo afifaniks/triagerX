@@ -1,0 +1,30 @@
+use_description: true
+dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_dataset_6_7_24.csv"
+target_components:
+  - "comp:vm"
+  - "comp:jvmti"
+  - "comp:jclextensions"
+  - "comp:test"
+  - "comp:build"
+  - "comp:gc"
+base_transformer_models: 
+ - "roberta-base"
+model_key: "cnn-transformer"
+unfrozen_layers: 3
+num_classifiers: 3
+max_tokens: 256
+val_size: 0.2
+test_size: 0.2
+dropout: 0.2
+learning_rate: 0.00001
+epochs: 25
+batch_size: 10
+early_stopping_patience: 10
+topk_indices:
+ - 3
+run_name: "component_deberta-base_u3_6_classes"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+wandb_project: "openj9-component"
+architecture: "Deberta base - CNN"
+dataset: "Openj9 Issues"

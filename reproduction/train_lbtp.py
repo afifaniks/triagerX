@@ -34,6 +34,7 @@ parser.add_argument(
     required=True,
     help="Path for saving the output model weights",
 )
+parser.add_argument("--run_name", type=str, required=True, help="Run name")
 
 # Parse arguments
 args = parser.parse_args()
@@ -145,6 +146,7 @@ class LBTPClassifier(nn.Module):
             ]
         )
 
+        # Dropout is ommitted as it is not mentioned in the LBTP paper
         # self.dropout = nn.Dropout(dropout)
 
     def forward(self, input_ids, attention_mask):
@@ -185,6 +187,15 @@ class CombineLoss(nn.Module):
         return loss
 
 
+def _count_correct_predictions(top_k_predictions, val_label):
+    """Count correct predictions for a given top-k setting."""
+    return (
+        top_k_predictions.eq(val_label.view(1, -1).expand_as(top_k_predictions))
+        .sum()
+        .item()
+    )
+
+
 def log_step(
     epoch_num,
     total_acc_train,
@@ -196,7 +207,7 @@ def log_step(
     f1_score,
     train_data,
     validation_data,
-    topk,
+    accuracy_top_k,
 ):
     log_dict = {
         "train_acc": total_acc_train / len(train_data),
@@ -206,14 +217,15 @@ def log_step(
         "precision": precision,
         "recall": recall,
         "f1-score": f1_score,
-        "top10_acc": topk,
     }
+    for k_index, k_score in accuracy_top_k.items():
+        log_dict[f"top{k_index}_acc"] = k_score
 
     log = f"Epochs: {epoch_num + 1} | Train Loss: {log_dict['train_loss']: .3f} \
                     | Train Accuracy: {log_dict['train_acc']: .3f} \
                     | Val Loss: {log_dict['val_loss']: .3f} \
                     | Val Accuracy: {log_dict['val_acc']: .3f} \
-                    | Top 10: {topk} \
+                    | Top k: {accuracy_top_k} \
                     | Precision: {precision: .3f} \
                     | Recall: {recall: .3f} \
                     | F1-score: {f1_score: .3f}"
@@ -257,13 +269,8 @@ sliced_df = df[: samples_per_block * (block + 1)]
 print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 
 # Train and Validation preparation
-
 X_df = sliced_df[: samples_per_block * block]
 y_df = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
-
-# developers = X_df["owner"].value_counts()
-# filtered_developers = developers.index[developers >= sample_threshold]
-# X_df = X_df[X_df["owner"].isin(filtered_developers)]
 
 train_owners = set(X_df["owner"])
 test_owners = set(y_df["owner"])
@@ -299,15 +306,16 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
 learning_rate = 1e-5
-epochs = 50
+epochs = 40
 batch_size = 10
+topk_indices = [3, 5, 10]
 
 wandb_config = {
     "project": "lbtp_reproduction",
-    "name": f"lbtp_mc_block{block}",
+    "name": f"{args.run_name}_block{block}",
     "config": {
         "learning_rate": learning_rate,
-        "dataset": "openj9",
+        "dataset": "Deeptriage",
         "epochs": epochs,
     },
 }
@@ -351,7 +359,7 @@ for epoch_num in range(epochs):
 
     total_acc_val = 0
     total_loss_val = 0
-    correct_top_k = 0
+    correct_top_k = {k: 0 for k in topk_indices}
 
     all_preds = []
     all_labels = []
@@ -369,15 +377,13 @@ for epoch_num in range(epochs):
             total_loss_val += batch_loss.item()
 
             output = torch.sum(torch.stack(output), 0)
-            _, top_k_predictions = output.topk(10, 1, True, True)
 
+            _, top_k_predictions = output.topk(max(topk_indices), 1, True, True)
             top_k_predictions = top_k_predictions.t()
-
-            correct_top_k += (
-                top_k_predictions.eq(val_label.view(1, -1).expand_as(top_k_predictions))
-                .sum()
-                .item()
-            )
+            for k in topk_indices:
+                correct_top_k[k] += _count_correct_predictions(
+                    top_k_predictions[:k], val_label
+                )
 
             acc = (output.argmax(dim=1) == val_label).sum().item()
 
@@ -393,7 +399,9 @@ for epoch_num in range(epochs):
         all_labels, all_preds, average="macro"
     )
 
-    top10 = correct_top_k / len(y_df)
+    accuracy_top_k = {
+        k: correct_top_k[k] / len(val_dataloader.dataset) for k in topk_indices
+    }
 
     log_step(
         epoch_num,
@@ -406,7 +414,7 @@ for epoch_num in range(epochs):
         f1_score,
         X_df,
         y_df,
-        top10,
+        accuracy_top_k,
     )
 
     val_loss = total_loss_val / len(y_df)

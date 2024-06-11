@@ -32,6 +32,9 @@ parser = argparse.ArgumentParser(description="Training script arguments")
 parser.add_argument(
     "--config", type=str, required=True, help="Path to training config file"
 )
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path of the dataset"
+)
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
 args = parser.parse_args()
 
@@ -40,14 +43,13 @@ with open(args.config, "r") as stream:
     config = yaml.safe_load(stream)
 
 # Set each field from the YAML config
-use_special_tokens = config.get("use_special_tokens")
-use_summary = config.get("use_summary")
+dataset_path = args.dataset_path
+seed = args.seed
+
 use_description = config.get("use_description")
-dataset_path = config.get("dataset_path")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
 num_classifiers = config.get("num_classifiers")
-seed = args.seed
 val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
@@ -93,8 +95,8 @@ raw_df = raw_df.rename(columns={"assignees": "owner", "issue_body": "description
 
 df = TextProcessor.prepare_dataframe(
     raw_df,
-    use_special_tokens=use_special_tokens,
-    use_summary=use_summary,
+    use_special_tokens=False,
+    use_summary=False,
     use_description=use_description,
     component_training=False,
 )

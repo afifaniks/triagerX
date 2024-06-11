@@ -6,16 +6,19 @@ from torch.utils.data import Dataset
 
 from triagerx.dataset import EnsembleDataset, TriageDataset
 from triagerx.model.cnn_transformer import CNNTransformer
+from triagerx.model.fcn_transformer import FCNTransformer
 from triagerx.model.prediction_model import PredictionModel
 from triagerx.model.triagerx_dev_model import TriagerxDevModel
 
 DEFINED_MODELS = {
     "cnn-transformer": CNNTransformer,
+    "fcn-transformer": FCNTransformer,
     "triagerx": TriagerxDevModel,
 }
 
 DEFINED_DATASETS = {
     CNNTransformer.__name__: TriageDataset,
+    FCNTransformer.__name__: TriageDataset,
     TriagerxDevModel.__name__: EnsembleDataset,
 }
 
@@ -53,17 +56,22 @@ class ModelFactory:
         model_params = {
             "output_size": output_size,
             "unfrozen_layers": unfrozen_layers,
-            "num_classifiers": num_classifiers,
             "dropout": dropout,
             "max_tokens": max_tokens,
-            "num_filters": num_filters,
             "label_map": label_map,
         }
 
-        if model_key == "cnn-transformer":
-            model_params["base_model"] = base_models[0]
+        if "fcn" not in model_key:
+            logger.debug("Including number of filters and classifiers")
+            model_params["num_classifiers"] = num_classifiers
+            model_params["num_filters"] = num_filters
         else:
+            logger.debug("Ignoring number of filters and classifiers for FCN")
+
+        if model_key == "triagerx":
             model_params["base_models"] = base_models
+        else:
+            model_params["base_model"] = base_models[0]
 
         return model_class(**model_params)
 

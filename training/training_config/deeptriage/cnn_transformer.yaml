@@ -1,11 +1,7 @@
-use_special_tokens: false
 use_description: true
-use_summary: false
-dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_core/classifier_data_20.csv"
 base_transformer_models: 
- - "microsoft/deberta-base"
  - "roberta-base"
-model_key: "triagerx"
+model_key: "cnn-transformer"
 unfrozen_layers: 3
 num_classifiers: 3
 total_folds: 10
@@ -14,17 +10,17 @@ val_size: 0.2
 test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
-epochs: 50
+epochs: 20
 batch_size: 10
 max_tokens: 256
-early_stopping_patience: 7
+early_stopping_patience: null
 topk_indices:
   - 3
   - 5
   - 10
-run_name: "triagerx_ensemble_dt_mc"
-weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+run_name: "cnn_roberta-base_dt_gc"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "lbtp_reproduction"
-architecture: "TriagerxDevModel"
+architecture: "Roberta base - CNN"
 dataset: "Deeptriage Issues"

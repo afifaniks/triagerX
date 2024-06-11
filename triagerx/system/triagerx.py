@@ -1,6 +1,5 @@
 import json
 import os
-import re
 from collections import defaultdict
 from typing import Dict, List
 
@@ -9,19 +8,17 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from sentence_transformers import util
-from transformers import PreTrainedTokenizer
 
 from triagerx.dataset.text_processor import TextProcessor
+from triagerx.model.prediction_model import PredictionModel
 
 
 class TriagerX:
     def __init__(
         self,
-        component_prediction_model: nn.Module,
-        developer_prediction_model: nn.Module,
+        component_prediction_model: PredictionModel,
+        developer_prediction_model: PredictionModel,
         similarity_model: nn.Module,
-        tokenizer: PreTrainedTokenizer,
-        tokenizer_config: Dict,
         issues_path: str,
         train_data: pd.DataFrame,
         developer_id_map: Dict[str, int],
@@ -35,8 +32,6 @@ class TriagerX:
         self._component_prediction_model = self._component_prediction_model.to(device)
         self._developer_prediction_model = self._developer_prediction_model.to(device)
         self._similarity_model = similarity_model
-        self._tokenizer = tokenizer
-        self._tokenizer_config = tokenizer_config
         self._train_data = train_data
         self._special_tokens = TextProcessor.SPECIAL_TOKENS
         self._issues_path = issues_path
@@ -58,12 +53,9 @@ class TriagerX:
         )
 
     def get_recommendation(self, issue, k_comp, k_dev, k_rank, similarity_threshold):
-        logger.debug("Processing issue...")
-        processed_issue = self._tokenize_issue(issue=issue)
-
         logger.debug("Prediciting components...")
         comp_prediction_score, predicted_components = self._get_predicted_components(
-            tokenized_issue=processed_issue, k=k_comp
+            issue=issue, k=k_comp
         )
         predicted_components_name = [
             self._id2component_map[idx] for idx in predicted_components
@@ -72,7 +64,7 @@ class TriagerX:
 
         logger.debug("Generating developer recommendation...")
         dev_prediction_score, predicted_devs = self._get_recommendation_from_dev_model(
-            tokenized_issue=processed_issue, k=k_rank
+            issue=issue, k=k_rank
         )
         predicted_developers_name = [
             self._id2developer_map[idx] for idx in predicted_devs
@@ -90,7 +82,7 @@ class TriagerX:
         similar_issue_devs = [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
         logger.info(f"Recommended developers by issue similarity: {similar_issue_devs}")
 
-        logger.debug(f"Aggregating ranking...")
+        logger.debug("Aggregating ranking...")
         rank_lists = [predicted_developers_name, similar_issue_devs]
 
         aggregated_rank = self._aggregate_rank(rank_lists)[:k_dev]
@@ -119,24 +111,13 @@ class TriagerX:
 
         return [item[0] for item in sorted_items]
 
-    def _tokenize_issue(self, issue: str):
-        return self._tokenizer(
-            issue,
-            padding=self._tokenizer_config["padding"],
-            max_length=self._tokenizer_config["max_length"],
-            truncation=self._tokenizer_config["truncation"],
-            return_tensors=self._tokenizer_config["return_tensors"],
-        )
-
-    def _get_recommendation_from_dev_model(self, tokenized_issue, k):
+    def _get_recommendation_from_dev_model(self, issue, k):
         with torch.no_grad():
-            predictions = self._developer_prediction_model(
-                input_ids=tokenized_issue["input_ids"].to(self._device),
-                tok_type=tokenized_issue["token_type_ids"].to(self._device),
-                attention_mask=tokenized_issue["attention_mask"].to(self._device),
-            )
+            tokenized_issue = self._developer_prediction_model(issue)
+            predictions = self._developer_prediction_model(tokenized_issue)
 
         output = torch.sum(torch.stack(predictions), 0)
+
         prediction_score, predicted_devs = output.topk(k, 1, True, True)
 
         predicted_devs = predicted_devs.squeeze(dim=0).cpu().numpy().tolist()
@@ -144,15 +125,13 @@ class TriagerX:
 
         return prediction_score, predicted_devs
 
-    def _get_predicted_components(self, tokenized_issue, k):
+    def _get_predicted_components(self, issue, k):
         with torch.no_grad():
-            predictions = self._component_prediction_model(
-                input_ids=tokenized_issue["input_ids"].to(self._device),
-                tok_type=tokenized_issue["token_type_ids"].to(self._device),
-                attention_mask=tokenized_issue["attention_mask"].to(self._device),
-            )
+            tokenized_issue = self._component_prediction_model.tokenize_text(issue)
+            predictions = self._component_prediction_model(tokenized_issue)
 
         output = torch.sum(torch.stack(predictions), 0)
+
         prediction_score, predicted_components = output.topk(k, 1, True, True)
 
         predicted_components = (
@@ -290,31 +269,3 @@ class TriagerX:
                 similar_issues.append([idx, sim_score])
 
         return similar_issues
-
-    def _clean_data(self, issue_data):
-        issue_data = re.sub(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
-            " ",
-            issue_data,
-        )
-        issue_data = re.sub(" +", " ", issue_data)
-        issue_data = issue_data.strip()
-        issue_data = re.sub(r"0x[\da-fA-F]+", self._special_tokens["hex"], issue_data)
-        issue_data = re.sub(
-            r"\b[0-9a-fA-F]{16}\b", self._special_tokens["hex"], issue_data
-        )
-        issue_data = re.sub(
-            r"\b\d{2}:\d{2}:\d{2}\.\d{3}\b",
-            self._special_tokens["timestamp"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"\s*[-+]?\d*\.\d+([eE][-+]?\d+)?",
-            self._special_tokens["float"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"=\s*-?\d+", f'= {self._special_tokens["param"]}', issue_data
-        )
-
-        return issue_data

@@ -14,14 +14,11 @@ from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
 
-from triagerx.model.module_factory import DatasetFactory, ModelFactory
-
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
 from triagerx.dataset.text_processor import TextProcessor
-from triagerx.dataset.triage_dataset import TriageDataset
 from triagerx.loss.loss_functions import *
-from triagerx.model.cnn_transformer import CNNTransformer
+from triagerx.model.module_factory import DatasetFactory, ModelFactory
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -34,6 +31,9 @@ parser = argparse.ArgumentParser(description="Training script arguments")
 parser.add_argument(
     "--config", type=str, required=True, help="Path to training config file"
 )
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path of the dataset"
+)
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
 args = parser.parse_args()
 
@@ -41,19 +41,19 @@ logger.debug(f"Loading training configuration from: {args.config}")
 with open(args.config, "r") as stream:
     config = yaml.safe_load(stream)
 
+dataset_path = args.dataset_path
+seed = args.seed
+
 # Set each field from the YAML config
 use_special_tokens = config.get("use_special_tokens")
 use_summary = config.get("use_summary")
 use_description = config.get("use_description")
-dataset_path = config.get("dataset_path")
 target_components = config.get("target_components")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
 num_classifiers = config.get("num_classifiers")
 max_tokens = config.get("max_tokens")
 model_key = config.get("model_key")
-
-seed = args.seed
 val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
@@ -160,7 +160,7 @@ sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 model = ModelFactory.get_model(
     model_key=model_key,
-    output_size=len(df_train.owner_id.unique()),
+    output_size=len(df_train.component_id.unique()),
     unfrozen_layers=unfrozen_layers,
     num_classifiers=num_classifiers,
     base_models=base_transformer_models,
@@ -212,7 +212,7 @@ train_config = TrainConfig(
     epochs=epochs,
     output_path=weights_save_location,
     device=device,
-    topk_indices=3,
+    topk_indices=topk_indices,
     log_manager=log_manager,
     early_stopping_patience=early_stopping_patience,
     scheduler=scheduler,

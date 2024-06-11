@@ -1,28 +1,24 @@
-use_special_tokens: false
 use_description: true
-use_summary: false
-dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_dataset_6_7_24.csv"
 base_transformer_models: 
- - "microsoft/deberta-large"
  - "roberta-base"
+model_key: "cnn-transformer"
 unfrozen_layers: 3
 num_classifiers: 3
 val_size: 0.2
 test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
-epochs: 50
+epochs: 40
 batch_size: 10
 max_tokens: 256
-early_stopping_patience: 10
+early_stopping_patience: null
 topk_indices: 
   - 3
   - 5
   - 10
-model_key: "triagerx"
-run_name: "triagerx_ensemble_u3_42_classes_5678fs"
-weights_save_location: "/work/disa_lab/projects/triagerx/models/"
+run_name: "cnn_roberta-base_u3_42_classes"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
-architecture: "Triagerx Ensemble"
+architecture: "CNN Roberta"
 dataset: "Openj9 Issues"
