@@ -2,9 +2,9 @@
 #SBATCH -J triagerx
 #SBATCH -t 1-00:00:00
 #SBATCH -n 1
-#SBATCH --mem=80G
+#SBATCH --mem=50G
 #SBATCH --partition=disa --gres=gpu:1
-#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/%j.out
+#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/lbtp_%j.out
 
 # Activate conda environment
 source ~/miniconda3/etc/profile.d/conda.sh
