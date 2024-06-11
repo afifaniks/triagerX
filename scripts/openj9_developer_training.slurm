@@ -27,5 +27,5 @@ elif [ "$CONFIG_PARAM" == "cnn" ]; then
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/openj9_dataset_6_7_24.csv \
         --seed 42
 else
-    echo "Invalid parameter. Use 'gc-{X}' for GC configuration or 'mc-{X}' for Mozilla Core configuration."
+    echo "Invalid parameter. Use 'triagerx' for Openj9 (Triagerx) configuration or 'cnn' for Openj9 (CNN-Transformer) configuration."
 fi
