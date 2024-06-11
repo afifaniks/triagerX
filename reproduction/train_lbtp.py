@@ -306,7 +306,7 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
 learning_rate = 1e-5
-epochs = 20
+epochs = 40
 batch_size = 10
 topk_indices = [3, 5, 10]
 
