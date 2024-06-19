@@ -1,0 +1,110 @@
+{
+  "0": {
+    "precision": 0.5,
+    "recall": 0.7777777777777778,
+    "f1-score": 0.6086956521739131,
+    "support": 9.0
+  },
+  "1": {
+    "precision": 0.38235294117647056,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.35616438356164387,
+    "support": 39.0
+  },
+  "2": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 4.0
+  },
+  "3": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "4": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "5": {
+    "precision": 0.4,
+    "recall": 0.3888888888888889,
+    "f1-score": 0.39436619718309857,
+    "support": 36.0
+  },
+  "6": {
+    "precision": 1.0,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.5,
+    "support": 3.0
+  },
+  "7": {
+    "precision": 0.13333333333333333,
+    "recall": 0.16666666666666666,
+    "f1-score": 0.14814814814814814,
+    "support": 12.0
+  },
+  "8": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "9": {
+    "precision": 0.3333333333333333,
+    "recall": 0.5,
+    "f1-score": 0.4,
+    "support": 4.0
+  },
+  "10": {
+    "precision": 0.5,
+    "recall": 0.5172413793103449,
+    "f1-score": 0.5084745762711865,
+    "support": 29.0
+  },
+  "11": {
+    "precision": 0.3333333333333333,
+    "recall": 0.07692307692307693,
+    "f1-score": 0.125,
+    "support": 13.0
+  },
+  "12": {
+    "precision": 0.3793103448275862,
+    "recall": 0.44,
+    "f1-score": 0.4074074074074074,
+    "support": 25.0
+  },
+  "13": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 4.0
+  },
+  "14": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "accuracy": 0.358695652173913,
+  "macro avg": {
+    "precision": 0.2641108857336038,
+    "recall": 0.23561096374889479,
+    "f1-score": 0.22988375764969315,
+    "support": 184.0
+  },
+  "weighted avg": {
+    "precision": 0.3698977717023841,
+    "recall": 0.358695652173913,
+    "f1-score": 0.35325859022765355,
+    "support": 184.0
+  },
+  "top3_acc": 0.6793478260869565,
+  "top5_acc": 0.8260869565217391,
+  "top10_acc": 0.9782608695652174,
+  "run_name": "triagerx_ensemble_u3_15_classes_last_dev_seed42",
+  "model_location": "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_15_classes_last_dev_seed42.pt"
+}
