@@ -1,6 +1,8 @@
 import itertools
+import os
 import sys
 
+import numpy as np
 import pandas as pd
 import torch
 from loguru import logger
@@ -32,7 +34,7 @@ df_train = pd.read_csv(
 df_test = pd.read_csv(
     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_test.csv"
 )
-output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_search_results.csv"
+output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_search_results_new.csv"
 developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42_last_epoch_39.pt"
 component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
 train_embeddings_path = (
@@ -106,8 +108,10 @@ comp_model.load_state_dict(torch.load(component_model_weights))
 logger.debug("Generating embeddings...")
 similarity_model = SentenceTransformer("all-mpnet-base-v2")
 
-# encodings = similarity_model.encode(df_train.text.tolist(), show_progress_bar=True)
-# np.save(train_embeddings_path, encodings)
+if not os.path.exists(train_embeddings_path):
+    logger.debug("Embedding doesn't exist, generating new...")
+    encodings = similarity_model.encode(df_train.text.tolist(), show_progress_bar=True)
+    np.save(train_embeddings_path, encodings)
 
 
 def get_recommendation(trx, test_idx, k_comp, k_dev, k_rank, sim):
@@ -186,12 +190,13 @@ def evaluate_recommendations(params):
         )
         recommendations.append(rec)
 
+    top_1 = get_topk_score(recommendations, 1)
     top_3 = get_topk_score(recommendations, 3)
     top_5 = get_topk_score(recommendations, 5)
     top_10 = get_topk_score(recommendations, 10)
     top_20 = get_topk_score(recommendations, 20)
 
-    return top_3, top_5, top_10, top_20
+    return top_1, top_3, top_5, top_10, top_20
 
 
 parameter_ranges = {
@@ -224,7 +229,7 @@ for params in itertools.product(*parameter_ranges.values()):
         "similarity_threshold": params[5],
     }
 
-    top_3, top_5, top_10, top_20 = evaluate_recommendations(params_dict)
+    top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(params_dict)
 
     # Append results to the list
     result = {
@@ -234,6 +239,9 @@ for params in itertools.product(*parameter_ranges.values()):
         "contribution_score": params_dict["contribution_score"],
         "discussion_score": params_dict["discussion_score"],
         "similarity_threshold": params_dict["similarity_threshold"],
+        "T1DL": top_1[0],
+        "T1Sim": top_1[1],
+        "T1Com": top_1[2],
         "T3DL": top_3[0],
         "T3Sim": top_3[1],
         "T3Com": top_3[2],
