@@ -1,7 +1,6 @@
 import itertools
 import sys
 
-import numpy as np
 import pandas as pd
 import torch
 from loguru import logger
@@ -41,7 +40,6 @@ train_embeddings_path = (
 )
 
 
-expected_users = set(df_test.owner.unique())
 sample_threshold = 20
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
@@ -160,6 +158,8 @@ def evaluate_recommendations(params):
     discussion_score = params["discussion_score"]
     similarity_threshold = params["similarity_threshold"]
 
+    expected_users = set(df_train.owner.unique())
+
     trx = TriagerX(
         component_prediction_model=comp_model,
         developer_prediction_model=dev_model,
@@ -197,10 +197,10 @@ def evaluate_recommendations(params):
 parameter_ranges = {
     "similarity_prediction_weight": [0.5, 0.6, 0.7],
     "time_decay_factor": [0.01, 0.03, 0.05],
-    "direct_assignment_score": [0.5, 1.0, 1.5, 2.0],
-    "contribution_score": [0.5, 1.0, 1.5, 2.0],
-    "discussion_score": [0.5, 0.7, 1.0],
-    "similarity_threshold": [0.5, 0.55, 0.6, 0.65, 0.7],
+    "direct_assignment_score": [1.0, 1.5, 2.0],
+    "contribution_score": [1.0, 1.5, 2.0],
+    "discussion_score": [0.5, 1.0],
+    "similarity_threshold": [0.5, 0.6, 0.65, 0.7],
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))
