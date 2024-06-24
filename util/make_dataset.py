@@ -1,5 +1,6 @@
 import json
 import os
+from collections import Counter
 
 import pandas as pd
 from tqdm import tqdm
@@ -37,27 +38,42 @@ class IssueExtractor:
                 if issue["labels"]
                 else ""
             ),
-            "assignees": self.extract_assignees(issue),
+            "owner": self.extract_assignees(issue),
         }
         issue_dict["component"] = self.component_split(issue_dict["labels"])
 
         return issue_dict
 
-    def extract_assignees(self, issue):
+    def extract_assignees(self, issue, contribution_type="last"):
         assignees = issue["assignees"]
         if assignees:
             return ",".join([assignee["login"] for assignee in assignees])
+
+        timeline = issue["timeline_data"]
+        last_assignment = None
+        contributors = []
+
+        for timeline_event in timeline:
+            event = timeline_event["event"]
+            if event == "cross-referenced" and timeline_event["source"]["issue"].get(
+                "pull_request", None
+            ):
+                last_assignment = timeline_event["actor"]["login"]
+                contributors.append(last_assignment)
+            if event == "referenced" and timeline_event["commit_url"]:
+                last_assignment = timeline_event["actor"]["login"]
+                contributors.append(last_assignment)
+
+        most_contributed = None
+        if len(contributors) > 0:
+            most_contributed = Counter(contributors).most_common(1)[0][0]
+
+        if contribution_type == "last":
+            return last_assignment
+        elif contribution_type == "most":
+            return most_contributed
         else:
-            timeline = issue["timeline_data"]
-            for timeline_event in timeline:
-                event = timeline_event["event"]
-                if event == "cross-referenced" and timeline_event["source"][
-                    "issue"
-                ].get("pull_request", None):
-                    return timeline_event["actor"]["login"]
-                if event == "referenced" and timeline_event["commit_url"]:
-                    return timeline_event["actor"]["login"]
-        return None
+            raise Exception("Unsupported contribution type.")
 
     def component_split(self, labels):
         for label in labels.split(","):
@@ -66,10 +82,16 @@ class IssueExtractor:
         return None
 
 
-json_root = "data/issue_data"
+json_root = (
+    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_issue_data_6_7_24"
+)
 extractor = IssueExtractor()
 issues = extractor.extract_issues(json_root=json_root)
 
 df = pd.DataFrame(issues)
 df = df.sort_values(by="issue_number")
-df.to_csv("test.csv", index=False)
+df = df.assign(owner=df["owner"].str.split(","))
+df = df.explode("owner")
+df["owner"] = df["owner"].str.lower()
+
+df.to_csv("data/openj9_dataset_6_7_24_last.csv", index=False)
