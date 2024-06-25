@@ -4,7 +4,7 @@ project:
 
 similarity_model:
   model_key: "all-mpnet-base-v2"
-  embeddings_path: "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/train_embeddings.npy"
+  embeddings_path: "app/saved_states/train_embeddings.npy"
 
 component_model:
   config:
@@ -16,7 +16,7 @@ component_model:
     dropout: 0.2
     max_tokens: 256
     num_filters: 256
-  weights_path: "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
+  weights_path: "app/saved_states/component_triagerx_u3_6_classes_seed42.pt"
 
 developer_model:
   config:
@@ -28,7 +28,7 @@ developer_model:
     dropout: 0.2
     max_tokens: 256
     num_filters: 256
-  weights_path: "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
+  weights_path: "app/saved_states/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
 
 contribution_score_params:
   maximum_similar_issues: 20
@@ -40,14 +40,14 @@ contribution_score_params:
   discussion_score: 0
 
 data:
-  issues_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_issue_data_6_7_24"
-  train_data: "/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17_devs.csv"
+  issues_path: "app/app_data/openj9_issue_data_6_7_24"
+  train_data: "app/app_data/openj9_train_17_devs.csv"
 
 developer_id_map:
   adambrousseau: 0
   amicic: 1
   babsingh: 2
-  chengjin01: 3 
+  chengjin01: 3
   dmitripivkine: 4
   fengxue-is: 5
   gacholio: 6
