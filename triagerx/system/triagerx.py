@@ -104,8 +104,9 @@ class TriagerX:
             normalized_similarity_score,
         ) = self._get_similarity_recommendations(issue, k_rank, similarity_threshold)
 
-        logger.debug(f"Similar developers from history: {similarity_devs}")
-        logger.debug(f"Similarity score: {normalized_similarity_score}")
+        logger.debug(
+            f"Similar issue contribution scores: {list(zip(similarity_devs, normalized_similarity_score))}"
+        )
 
         aggregated_rank, aggregated_prediction_score = self._aggregate_rankings(
             all_dev_prediction_scores,
@@ -285,7 +286,8 @@ class TriagerX:
         Returns:
             List[Tuple[str, float]]: A list of contributors and their contribution scores.
         """
-        user_contribution_scores = {dev: 0 for dev in self._id2developer_map.values()}
+        # Intialize all contribution score to 0
+        user_contribution_scores = {dev: 0 for dev in self._developer2id_map.keys()}
         skipped_users = set()
 
         for issue_index, sim_score in similar_issues:

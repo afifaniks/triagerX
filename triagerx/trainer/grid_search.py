@@ -28,27 +28,37 @@ target_components = [
 ]
 target_components = sorted(target_components)
 
-df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_x.csv")
-df_test = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_test_x.csv")
+
+# PAPER CONFIG
+# df_train = pd.read_csv(
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_train.csv"
+# )
+# df_test = pd.read_csv(
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_test.csv"
+# )
+# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50.csv"
+# developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+# component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
+# train_embeddings_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_50devs.npy"
+# MAX_K = 20
+
+# IBM CONFIG
+df_train = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/app/app_data/openj9_train_17_devs.csv"
+)
+df_test = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/app/app_data/openj9_test_17_devs.csv"
+)
 output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_ibm.csv"
 developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
 component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
 train_embeddings_path = (
     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_ibm.npy"
 )
+MAX_K = 10
 
-
-sample_threshold = 20
-developers = df_train["owner"].value_counts()
-filtered_developers = developers.index[developers >= sample_threshold]
-df_train = df_train[df_train["owner"].isin(filtered_developers)]
-
-train_owners = set(df_train["owner"])
-test_owners = set(df_test["owner"])
-
-unwanted = list(test_owners - train_owners)
-
-df_test = df_test[~df_test["owner"].isin(unwanted)]
+df_train["owner"] = df_train.owner.apply(lambda x: x.lower())
+df_test["owner"] = df_test.owner.apply(lambda x: x.lower())
 
 logger.info(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
 logger.info(f"Number of developers: {len(df_train.owner.unique())}")
@@ -183,7 +193,7 @@ def evaluate_recommendations(params):
 
     for i in tqdm(range(len(df_test)), total=len(df_test), desc="Processing..."):
         rec = get_recommendation(
-            trx, i, k_comp=3, k_dev=10, k_rank=20, sim=similarity_threshold
+            trx, i, k_comp=3, k_dev=MAX_K, k_rank=20, sim=similarity_threshold
         )
         recommendations.append(rec)
 
@@ -206,12 +216,12 @@ def evaluate_recommendations(params):
 # }
 
 parameter_ranges = {
-    "similarity_prediction_weight": [0.6],
+    "similarity_prediction_weight": [0.65],
     "time_decay_factor": [0.01],
     "direct_assignment_score": [0.5],
     "contribution_score": [1.5],
-    "discussion_score": [0],
-    "similarity_threshold": [0.6],
+    "discussion_score": [0.2],
+    "similarity_threshold": [0.5],
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))
