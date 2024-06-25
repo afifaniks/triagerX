@@ -4,8 +4,8 @@ base_transformer_models:
 model_key: "cnn-transformer"
 unfrozen_layers: 3
 num_classifiers: 3
-val_size: 0.2
-test_size: 0.2
+val_size: 0.1
+test_size: 0.1
 dropout: 0.2
 learning_rate: 0.00001
 epochs: 40
@@ -16,7 +16,8 @@ topk_indices:
   - 3
   - 5
   - 10
-run_name: "cnn_roberta-base_u3_42_classes"
+  - 20
+run_name: "cnn_roberta-base_u3_50_classes_last_dev"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
