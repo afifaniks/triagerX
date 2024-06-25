@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 1-00:00:00
+#SBATCH -t 3-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=5G
 #SBATCH --partition=cpu2023
