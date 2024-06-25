@@ -28,17 +28,13 @@ target_components = [
 ]
 target_components = sorted(target_components)
 
-df_train = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_train.csv"
-)
-df_test = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_test.csv"
-)
-output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_search_results_new.csv"
-developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42_last_epoch_39.pt"
+df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_x.csv")
+df_test = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_test_x.csv")
+output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_ibm.csv"
+developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
 component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
 train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings.npy"
+    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_ibm.npy"
 )
 
 
@@ -64,8 +60,8 @@ logger.info(f"Test dataset size: {len(df_test)}")
 lbl2idx = dict(zip(df_train["owner"], df_train["owner_id"]))
 idx2lbl = dict(zip(df_train["owner_id"], df_train["owner"]))
 
-df_train = df_train[df_train["component"].notna()]
-df_test = df_test[df_test["component"].notna()]
+# df_train = df_train[df_train["component"].notna()]
+# df_test = df_test[df_test["component"].notna()]
 
 
 comp_id2label = {}
@@ -163,6 +159,7 @@ def evaluate_recommendations(params):
     similarity_threshold = params["similarity_threshold"]
 
     expected_users = set(df_train.owner.unique())
+    print(expected_users)
 
     trx = TriagerX(
         component_prediction_model=comp_model,
@@ -186,7 +183,7 @@ def evaluate_recommendations(params):
 
     for i in tqdm(range(len(df_test)), total=len(df_test), desc="Processing..."):
         rec = get_recommendation(
-            trx, i, k_comp=3, k_dev=20, k_rank=20, sim=similarity_threshold
+            trx, i, k_comp=3, k_dev=10, k_rank=20, sim=similarity_threshold
         )
         recommendations.append(rec)
 
@@ -199,13 +196,22 @@ def evaluate_recommendations(params):
     return top_1, top_3, top_5, top_10, top_20
 
 
+# parameter_ranges = {
+#     "similarity_prediction_weight": [0.5, 0.6, 0.7],
+#     "time_decay_factor": [0.01, 0.03, 0.05],
+#     "direct_assignment_score": [1.0, 1.5, 2.0],
+#     "contribution_score": [1.0, 1.5, 2.0],
+#     "discussion_score": [0.5, 1.0],
+#     "similarity_threshold": [0.5, 0.6, 0.65, 0.7],
+# }
+
 parameter_ranges = {
-    "similarity_prediction_weight": [0.5, 0.6, 0.7],
-    "time_decay_factor": [0.01, 0.03, 0.05],
-    "direct_assignment_score": [1.0, 1.5, 2.0],
-    "contribution_score": [1.0, 1.5, 2.0],
-    "discussion_score": [0.5, 1.0],
-    "similarity_threshold": [0.5, 0.6, 0.65, 0.7],
+    "similarity_prediction_weight": [0.6],
+    "time_decay_factor": [0.01],
+    "direct_assignment_score": [0.5],
+    "contribution_score": [1.5],
+    "discussion_score": [0],
+    "similarity_threshold": [0.6],
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))

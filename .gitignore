@@ -29,3 +29,5 @@ tokenizer/deeptriage/tokenizer_config.json
 tokenizer/deeptriage/tokenizer.json
 tokenizer/deeptriage/vocab.json
 .nfs*
+grid_reports/*
+app/app_data/openj9_issue_data*

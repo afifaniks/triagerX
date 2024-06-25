@@ -78,6 +78,10 @@ class TriagerX:
         predicted_components_name, comp_prediction_score = self._predict_components(
             issue, k_comp
         )
+
+        logger.debug(f"Predicted components: {predicted_components_name}")
+        logger.debug(f"Component prediction Score: {comp_prediction_score}")
+
         all_dev_prediction_scores = self._predict_developers(issue)
 
         topk_dev_prediction_score, topk_predicted_developers = torch.tensor(
@@ -88,9 +92,20 @@ class TriagerX:
             for idx in topk_predicted_developers.cpu().numpy()
         ]
 
-        similarity_devs, normalized_similarity_score = (
-            self._get_similarity_recommendations(issue, k_rank, similarity_threshold)
+        logger.debug(
+            f"Predicted developers by the model: {topk_predicted_developers_name}"
         )
+        logger.debug(
+            f"Developer prediction score: {topk_dev_prediction_score.cpu().numpy().tolist()}"
+        )
+
+        (
+            similarity_devs,
+            normalized_similarity_score,
+        ) = self._get_similarity_recommendations(issue, k_rank, similarity_threshold)
+
+        logger.debug(f"Similar developers from history: {similarity_devs}")
+        logger.debug(f"Similarity score: {normalized_similarity_score}")
 
         aggregated_rank, aggregated_prediction_score = self._aggregate_rankings(
             all_dev_prediction_scores,
@@ -98,6 +113,9 @@ class TriagerX:
             normalized_similarity_score,
             k_dev,
         )
+
+        logger.debug(f"Aggregated Ranks: {aggregated_rank}")
+        logger.debug(f"Aggregated Score: {aggregated_prediction_score}")
 
         recommendations = {
             "predicted_components": predicted_components_name,
@@ -129,7 +147,8 @@ class TriagerX:
             predictions = self._component_prediction_model(tokenized_issue)
 
         output = torch.sum(torch.stack(predictions), 0)
-        prediction_score, predicted_components = output.topk(k, 1, True, True)
+        output = self._normalize_tensor(output.squeeze(dim=0))
+        prediction_score, predicted_components = output.topk(k, 0, True, True)
         predicted_components = (
             predicted_components.squeeze(dim=0).cpu().numpy().tolist()
         )
@@ -243,9 +262,10 @@ class TriagerX:
             dev_prediction_scores, similarity_devs, normalized_similarity_score
         )
         prediction_scores_tensor = torch.tensor(dev_prediction_scores)
-        aggregated_prediction_score, aggregated_predicted_devs = (
-            prediction_scores_tensor.topk(k_dev, 0, True, True)
-        )
+        (
+            aggregated_prediction_score,
+            aggregated_predicted_devs,
+        ) = prediction_scores_tensor.topk(k_dev, 0, True, True)
         aggregated_rank = [
             self._id2developer_map[idx]
             for idx in aggregated_predicted_devs.cpu().numpy()
@@ -275,7 +295,7 @@ class TriagerX:
 
             for key, users in contributors.items():
                 for user_data in users:
-                    user = user_data[0]
+                    user = user_data[0].lower()
                     created_at = user_data[1] if len(user_data) > 1 else None
 
                     if user not in self._expected_developers:
@@ -364,10 +384,12 @@ class TriagerX:
                 for timeline_event in timeline:
                     event = timeline_event.get("event")
                     created_at = timeline_event.get("created_at")
-                    actor = timeline_event.get("actor", {}).get("login")
+                    actor = timeline_event.get("actor", {})
 
                     if not actor:
                         continue
+
+                    actor = actor.get("login")
 
                     if event == "cross-referenced" and timeline_event["source"].get(
                         "issue", {}

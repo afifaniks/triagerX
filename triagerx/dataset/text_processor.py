@@ -83,47 +83,12 @@ class TextProcessor:
     def prepare_text(
         bug_title: str,
         description: str,
-        summary: str,
-        use_special_tokens: bool,
-        use_summary: bool,
-        use_description: bool,
     ) -> str:
-        """
-        Prepares the input text by processing it based on the specified options.
-
-        This method modifies the given text according to the boolean flags provided:
-        `use_special_tokens`, `use_summary`, `use_description`, and `component_training`.
-        These flags determine whether special tokens, summary text, description text, and
-        component-specific processing are applied to the text.
-
-        Args:
-            text (str): The input text to be processed.
-            use_special_tokens (bool): If True, special tokens like [HEX], [NUMERIC] will be added to the description.
-            use_summary (bool): If True, the summary will be appended to the text.
-            use_description (bool): If True, the description will be appended to the text.
-            summary (str): The summary text to be used.
-            description (str): The description text to be used.
-            labels (str): The labels text to be used for component processing.
-            component_training (bool): If True, the text will be processed for component-specific training.
-
-        Returns:
-            str: The processed text with modifications based on the input flags.
-        """
 
         processed_text = "Bug Title: " + bug_title
+        processed_text += "\nBug Description: " + description
 
-        if use_special_tokens:
-            logger.info("Adding special tokens...")
-            description = TextProcessor.process_special_tokens(description)
-
-        if use_summary:
-            logger.info("Adding summary...")
-            summary = TextProcessor.clean_summary(summary)
-            processed_text += "\nBug Summary: " + summary
-
-        if use_description:
-            logger.info("Adding description...")
-            processed_text += "\nBug Description: " + description
+        processed_text = TextProcessor.clean_text(processed_text)
 
         return processed_text
 

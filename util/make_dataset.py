@@ -58,11 +58,18 @@ class IssueExtractor:
             if event == "cross-referenced" and timeline_event["source"]["issue"].get(
                 "pull_request", None
             ):
-                last_assignment = timeline_event["actor"]["login"]
-                contributors.append(last_assignment)
+                last_assignment = timeline_event.get("actor")
+
+                if last_assignment:
+                    last_assignment = last_assignment.get("login")
+                    contributors.append(last_assignment)
+
             if event == "referenced" and timeline_event["commit_url"]:
-                last_assignment = timeline_event["actor"]["login"]
-                contributors.append(last_assignment)
+                last_assignment = timeline_event.get("actor")
+
+                if last_assignment:
+                    last_assignment = last_assignment.get("login")
+                    contributors.append(last_assignment)
 
         most_contributed = None
         if len(contributors) > 0:
@@ -82,9 +89,7 @@ class IssueExtractor:
         return None
 
 
-json_root = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_issue_data_6_7_24"
-)
+json_root = "/home/mdafifal.mamun/notebooks/triagerX/data/powertoys"
 extractor = IssueExtractor()
 issues = extractor.extract_issues(json_root=json_root)
 
@@ -94,4 +99,4 @@ df = df.assign(owner=df["owner"].str.split(","))
 df = df.explode("owner")
 df["owner"] = df["owner"].str.lower()
 
-df.to_csv("data/openj9_dataset_6_7_24_last.csv", index=False)
+df.to_csv("data/powertoys_last.csv", index=False)

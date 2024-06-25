@@ -117,7 +117,9 @@ components = {
     "comp:gc": gc_users,
 }
 
-expected_users = [user.lower() for user_list in components.values() for user in user_list]
+expected_users = [
+    user.lower() for user_list in components.values() for user in user_list
+]
 df = df[df["owner"].isin(expected_users)]
 logger.info(f"Total issues after developer filtering: {len(df)}")
 
@@ -125,7 +127,7 @@ df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
-sample_threshold = 10
+sample_threshold = 20
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
 df_train = df_train[df_train["owner"].isin(filtered_developers)]

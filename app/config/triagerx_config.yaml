@@ -1,0 +1,71 @@
+project:
+  title: "TriagerX for Openj9"
+  api_version: "1.0"
+
+similarity_model:
+  model_key: "all-mpnet-base-v2"
+  embeddings_path: "app/saved_states/train_embeddings.npy"
+
+component_model:
+  config:
+    model_key: "triagerx"
+    base_models: ["microsoft/deberta-base", "roberta-base"]
+    output_size: 6
+    unfrozen_layers: 3
+    num_classifiers: 3
+    dropout: 0.2
+    max_tokens: 256
+    num_filters: 256
+  weights_path: "app/saved_states/component_triagerx_u3_6_classes_seed42.pt"
+
+developer_model:
+  config:
+    model_key: "triagerx"
+    base_models: ["microsoft/deberta-base", "roberta-base"]
+    output_size: 17
+    unfrozen_layers: 3
+    num_classifiers: 3
+    dropout: 0.2
+    max_tokens: 256
+    num_filters: 256
+  weights_path: "app/saved_states/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
+
+contribution_score_params:
+  maximum_similar_issues: 20
+  similarity_prediction_weight: 0.6
+  similarity_threshold: 0.6
+  time_decay_factor: 0.01
+  direct_assignment_score: 0.5
+  contribution_score: 1.0
+  discussion_score: 0
+
+data:
+  issues_path: "app/app_data/openj9_issue_data_6_7_24"
+  train_data: "app/app_data/openj9_train_17_devs.csv"
+
+developer_id_map:
+  adambrousseau: 0
+  amicic: 1
+  babsingh: 2
+  chengjin01: 3
+  dmitripivkine: 4
+  fengxue-is: 5
+  gacholio: 6
+  hangshao0: 7
+  jasonfengj9: 8
+  keithc-ca: 9
+  linhu2016: 10
+  llxia: 11
+  longyuzhang: 12
+  pshipton: 13
+  tajila: 14
+  thallium: 15
+  theresa-m: 16
+
+component_id_map:
+  comp:build: 0
+  comp:gc: 1
+  comp:jclextensions: 2
+  comp:jvmti: 3
+  comp:test: 4
+  comp:vm: 5
