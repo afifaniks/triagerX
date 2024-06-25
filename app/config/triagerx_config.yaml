@@ -4,95 +4,63 @@ project:
 
 similarity_model:
   model_key: "all-mpnet-base-v2"
+  embeddings_path: "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/train_embeddings.npy"
 
 component_model:
-  use_special_tokens: false
-  use_description: true
-  use_summary: false
-  base_transformer_model: "microsoft/deberta-base"
-  num_classes: 6
-  unfrozen_layers: 5
-  dropout: 0.2
-  topk_indices: 3
-  weights_save_location: "model_weights/comp_raw_data_LBTPDeberta_u5_6_classes_seed66.pt"
+  config:
+    model_key: "triagerx"
+    base_models: ["microsoft/deberta-base", "roberta-base"]
+    output_size: 6
+    unfrozen_layers: 3
+    num_classifiers: 3
+    dropout: 0.2
+    max_tokens: 256
+    num_filters: 256
+  weights_path: "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
 
 developer_model:
-  use_special_tokens: false
-  use_description: true
-  use_summary: false
-  base_transformer_model: "microsoft/deberta-large"
-  num_classes: 15
-  unfrozen_layers: 4
-  dropout: 0.2
-  topk_indices: 3
-  weights_save_location: "model_weights/dev_raw_data_LBTPDeberta_u4_16_classes_seed66.pt"
+  config:
+    model_key: "triagerx"
+    base_models: ["microsoft/deberta-base", "roberta-base"]
+    output_size: 17
+    unfrozen_layers: 3
+    num_classifiers: 3
+    dropout: 0.2
+    max_tokens: 256
+    num_filters: 256
+  weights_path: "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
+
+contribution_score_params:
+  maximum_similar_issues: 20
+  similarity_prediction_weight: 0.6
+  similarity_threshold: 0.6
+  time_decay_factor: 0.01
+  direct_assignment_score: 0.5
+  contribution_score: 1.0
+  discussion_score: 0
 
 data:
-  issues_dir: "data/issue_data"
-  train_data: "data/train_data.csv"
-
-tokenizer:
-  model_name: "microsoft/deberta-base"
-  padding: "max_length"
-  max_length: 512
-  truncation: True
-  return_tensors: "pt"
-
-component_developer_map:
-  comp:vm:
-    - pshipton
-    - keithc-ca
-    - gacholio
-    - tajila
-    - babsingh
-    - JasonFengJ9
-    - fengxue-IS
-    - hangshao0
-    - theresa.t.mammarella
-    - ChengJin01
-    - singh264
-    - thallium
-    - ThanHenderson
-  comp:jvmti:
-    - gacholio
-    - tajila
-    - babsingh
-    - fengxue-IS
-  comp:jclextensions:
-    - JasonFengJ9
-    - pshipton
-    - keithc-ca
-  comp:test:
-    - LongyuZhang
-    - annaibm
-    - sophiaxu0424
-    - KapilPowar
-    - llxia
-  comp:build:
-    - adambrousseau
-    - mahdipub
-  comp:gc:
-    - dmitripivkine
-    - amicic
-    - kangyining
-    - LinHu2016
+  issues_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_issue_data_6_7_24"
+  train_data: "/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17_devs.csv"
 
 developer_id_map:
-  ChengJin01: 0
-  JasonFengJ9: 1
-  LinHu2016: 2
-  LongyuZhang: 3
-  amicic: 4
-  babsingh: 5
-  dmitripivkine: 6
-  fengxue-IS: 7
-  gacholio: 8
-  hangshao0: 9
-  keithc-ca: 10
+  adambrousseau: 0
+  amicic: 1
+  babsingh: 2
+  chengjin01: 3 
+  dmitripivkine: 4
+  fengxue-is: 5
+  gacholio: 6
+  hangshao0: 7
+  jasonfengj9: 8
+  keithc-ca: 9
+  linhu2016: 10
   llxia: 11
-  pshipton: 12
-  tajila: 13
-  thallium: 14
+  longyuzhang: 12
+  pshipton: 13
+  tajila: 14
+  thallium: 15
+  theresa-m: 16
 
 component_id_map:
   comp:build: 0
