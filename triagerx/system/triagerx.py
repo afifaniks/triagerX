@@ -209,8 +209,8 @@ class TriagerX:
         similarity_devs = [dev[0] for dev in dev_predictions_by_similarity]
         similarity_scores = [score[1] for score in dev_predictions_by_similarity]
 
-        normalized_similarity_score = np.array([])
-        if similarity_scores:
+        normalized_similarity_score = np.array(similarity_scores)
+        if np.any(similarity_scores):  # Only normalize when at least one value is > 0
             normalized_similarity_score = self._normalize(similarity_scores)
 
         return similarity_devs, normalized_similarity_score
