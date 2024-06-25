@@ -8,18 +8,18 @@ from triagerx.dataset import EnsembleDataset, TriageDataset
 from triagerx.model.cnn_transformer import CNNTransformer
 from triagerx.model.fcn_transformer import FCNTransformer
 from triagerx.model.prediction_model import PredictionModel
-from triagerx.model.triagerx_dev_model import TriagerxDevModel
+from triagerx.model.triagerx_model import TriagerxModel
 
 DEFINED_MODELS = {
     "cnn-transformer": CNNTransformer,
     "fcn-transformer": FCNTransformer,
-    "triagerx": TriagerxDevModel,
+    "triagerx": TriagerxModel,
 }
 
 DEFINED_DATASETS = {
     CNNTransformer.__name__: TriageDataset,
     FCNTransformer.__name__: TriageDataset,
-    TriagerxDevModel.__name__: EnsembleDataset,
+    TriagerxModel.__name__: EnsembleDataset,
 }
 
 

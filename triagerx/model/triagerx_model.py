@@ -6,7 +6,7 @@ from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 from triagerx.model.prediction_model import PredictionModel
 
 
-class TriagerxDevModel(PredictionModel):
+class TriagerxModel(PredictionModel):
     def __init__(
         self,
         output_size,
@@ -18,7 +18,7 @@ class TriagerxDevModel(PredictionModel):
         num_filters=256,
         label_map=None,
     ) -> None:
-        super(TriagerxDevModel, self).__init__()
+        super(TriagerxModel, self).__init__()
 
         # Initialize base models and their respective tokenizers
         logger.debug(f"Loading base transformer models: {base_models}")
