@@ -1,227 +1,349 @@
 import json
+import math
 import os
-import re
-from collections import defaultdict
-from typing import Dict, List
+from datetime import datetime
+from typing import Dict, List, Optional, Set, Tuple
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from loguru import logger
 from sentence_transformers import util
-from transformers import PreTrainedTokenizer
 
-from triagerx.dataset.text_processor import TextProcessor
+from triagerx.model.prediction_model import PredictionModel
 
 
 class TriagerX:
     def __init__(
         self,
-        component_prediction_model: nn.Module,
-        developer_prediction_model: nn.Module,
+        component_prediction_model: PredictionModel,
+        developer_prediction_model: PredictionModel,
         similarity_model: nn.Module,
-        tokenizer: PreTrainedTokenizer,
-        tokenizer_config: Dict,
-        issues_path: str,
         train_data: pd.DataFrame,
+        train_embeddings: str,
+        issues_path: str,
         developer_id_map: Dict[str, int],
         component_id_map: Dict[str, int],
-        component_developers_map: Dict[str, List[str]],
+        expected_developers: Set[str],
         device: str,
+        similarity_prediction_weight: float,
+        time_decay_factor: float,
+        direct_assignment_score: float,
+        contribution_score: float,
+        discussion_score: float,
     ) -> None:
-        self._component_prediction_model = component_prediction_model
-        self._developer_prediction_model = developer_prediction_model
-        self._device = device
-        self._component_prediction_model = self._component_prediction_model.to(device)
-        self._developer_prediction_model = self._developer_prediction_model.to(device)
+        self._component_prediction_model = component_prediction_model.to(device)
+        self._developer_prediction_model = developer_prediction_model.to(device)
         self._similarity_model = similarity_model
-        self._tokenizer = tokenizer
-        self._tokenizer_config = tokenizer_config
+        self._device = device
+        self._similarity_prediction_weight = similarity_prediction_weight
+        self._time_decay_factor = time_decay_factor
+        self._direct_assignment_score = direct_assignment_score
+        self._contribution_score = contribution_score
+        self._discussion_score = discussion_score
         self._train_data = train_data
-        self._special_tokens = TextProcessor.SPECIAL_TOKENS
         self._issues_path = issues_path
-        self._all_issues = os.listdir(self._issues_path)
+        self._all_issues = os.listdir(issues_path)
         self._developer2id_map = developer_id_map
         self._component2id_map = component_id_map
+        self._expected_developers = expected_developers
         self._id2developer_map = {idx: dev for dev, idx in developer_id_map.items()}
         self._id2component_map = {idx: comp for comp, idx in component_id_map.items()}
-        self._component_developers_map = component_developers_map
-        self._expected_developers = [
-            user
-            for user_list in self._component_developers_map.values()
-            for user in user_list
-        ]
+        self._all_embeddings = np.load(train_embeddings)
         logger.debug(f"Using device: {device}")
-        logger.debug("Generating embedding for existing issues...")
-        self._all_embeddings = similarity_model.encode(
-            self._train_data.text.to_list(), batch_size=15
-        )
+        logger.debug("Loading embeddings for existing issues...")
 
-    def get_recommendation(self, issue, k_comp, k_dev, k_rank, similarity_threshold):
-        logger.debug("Processing issue...")
-        processed_issue = self._tokenize_issue(issue=issue)
+    def get_recommendation(
+        self,
+        issue: str,
+        k_comp: int,
+        k_dev: int,
+        k_rank: int,
+        similarity_threshold: float,
+    ) -> Dict[str, List]:
+        """
+        Generates recommendations for components and developers based on the given issue.
 
-        logger.debug("Prediciting components...")
-        comp_prediction_score, predicted_components = self._get_predicted_components(
-            tokenized_issue=processed_issue, k=k_comp
+        Args:
+            issue (str): The issue for which recommendations are to be generated.
+            k_comp (int): The number of top components to recommend.
+            k_dev (int): The number of top developers to recommend.
+            k_rank (int): The number of top ranked developers by similarity to consider.
+            similarity_threshold (float): The threshold for developer similarity scores.
+
+        Returns:
+            Dict[str, List]: A dictionary containing recommended components, developers, and their scores.
+        """
+        predicted_components_name, comp_prediction_score = self._predict_components(
+            issue, k_comp
         )
-        predicted_components_name = [
-            self._id2component_map[idx] for idx in predicted_components
+        all_dev_prediction_scores = self._predict_developers(issue)
+
+        topk_dev_prediction_score, topk_predicted_developers = torch.tensor(
+            all_dev_prediction_scores
+        ).topk(k_dev, dim=0, largest=True, sorted=True)
+        topk_predicted_developers_name = [
+            self._id2developer_map[idx]
+            for idx in topk_predicted_developers.cpu().numpy()
         ]
-        logger.info(f"Predicted components: {predicted_components_name}")
 
-        logger.debug("Generating developer recommendation...")
-        dev_prediction_score, predicted_devs = self._get_recommendation_from_dev_model(
-            tokenized_issue=processed_issue, k=k_rank
+        similarity_devs, normalized_similarity_score = (
+            self._get_similarity_recommendations(issue, k_rank, similarity_threshold)
         )
-        predicted_developers_name = [
-            self._id2developer_map[idx] for idx in predicted_devs
-        ]
-        logger.info(f"Recommended developers: {predicted_developers_name}")
 
-        logger.debug("Generating recommendation by similarity...")
-        dev_predictions_by_similarity = self._get_recommendation_by_similarity(
-            issue,
-            predicted_components,
-            k_dev=k_rank,
-            k_issue=k_rank,
-            similarity_threshold=similarity_threshold,
+        aggregated_rank, aggregated_prediction_score = self._aggregate_rankings(
+            all_dev_prediction_scores,
+            similarity_devs,
+            normalized_similarity_score,
+            k_dev,
         )
-        similar_issue_devs = [dev_sim for dev_sim, _ in dev_predictions_by_similarity]
-        logger.info(f"Recommended developers by issue similarity: {similar_issue_devs}")
-
-        logger.debug(f"Aggregating ranking...")
-        rank_lists = [predicted_developers_name, similar_issue_devs]
-
-        aggregated_rank = self._aggregate_rank(rank_lists)[:k_dev]
-        logger.info(f"Recommended developers by ranking aggregation: {aggregated_rank}")
 
         recommendations = {
             "predicted_components": predicted_components_name,
             "comp_prediction_score": comp_prediction_score,
-            "predicted_developers": predicted_developers_name[:k_dev],
-            "dev_prediction_score": dev_prediction_score,
-            "similar_devs": dev_predictions_by_similarity,
+            "predicted_developers": topk_predicted_developers_name,
+            "dev_prediction_score": topk_dev_prediction_score,
+            "similar_devs": similarity_devs[:k_dev],
+            "similar_score": normalized_similarity_score[:k_dev],
             "combined_ranking": aggregated_rank,
+            "combined_ranking_score": aggregated_prediction_score,
         }
 
         return recommendations
 
-    def _aggregate_rank(self, rank_lists):
-        borda_scores = defaultdict(int)
+    def _predict_components(self, issue: str, k: int) -> Tuple[List[str], List[float]]:
+        """
+        Predicts components related to the given issue.
 
-        for rank_list in rank_lists:
-            # Assign Borda scores to items based on their rank in each list
-            for i, item in enumerate(rank_list):
-                borda_scores[item] += len(rank_list) - i
+        Args:
+            issue (str): The issue for which components are to be predicted.
+            k (int): The number of top components to recommend.
 
-        sorted_items = sorted(borda_scores.items(), key=lambda x: x[1], reverse=True)
-
-        return [item[0] for item in sorted_items]
-
-    def _tokenize_issue(self, issue: str):
-        return self._tokenizer(
-            issue,
-            padding=self._tokenizer_config["padding"],
-            max_length=self._tokenizer_config["max_length"],
-            truncation=self._tokenizer_config["truncation"],
-            return_tensors=self._tokenizer_config["return_tensors"],
-        )
-
-    def _get_recommendation_from_dev_model(self, tokenized_issue, k):
+        Returns:
+            Tuple[List[str], List[float]]: A tuple containing a list of predicted component names and their prediction scores.
+        """
+        self._component_prediction_model.eval()
         with torch.no_grad():
-            predictions = self._developer_prediction_model(
-                input_ids=tokenized_issue["input_ids"].to(self._device),
-                tok_type=tokenized_issue["token_type_ids"].to(self._device),
-                attention_mask=tokenized_issue["attention_mask"].to(self._device),
-            )
-
-        output = torch.sum(torch.stack(predictions), 0)
-        prediction_score, predicted_devs = output.topk(k, 1, True, True)
-
-        predicted_devs = predicted_devs.squeeze(dim=0).cpu().numpy().tolist()
-        prediction_score = prediction_score.squeeze(dim=0).cpu().numpy().tolist()
-
-        return prediction_score, predicted_devs
-
-    def _get_predicted_components(self, tokenized_issue, k):
-        with torch.no_grad():
-            predictions = self._component_prediction_model(
-                input_ids=tokenized_issue["input_ids"].to(self._device),
-                tok_type=tokenized_issue["token_type_ids"].to(self._device),
-                attention_mask=tokenized_issue["attention_mask"].to(self._device),
-            )
+            tokenized_issue = self._component_prediction_model.tokenize_text(issue)
+            predictions = self._component_prediction_model(tokenized_issue)
 
         output = torch.sum(torch.stack(predictions), 0)
         prediction_score, predicted_components = output.topk(k, 1, True, True)
-
         predicted_components = (
             predicted_components.squeeze(dim=0).cpu().numpy().tolist()
         )
+
+        predicted_components_name = [
+            self._id2component_map[idx] for idx in predicted_components
+        ]
         prediction_score = prediction_score.squeeze(dim=0).cpu().numpy().tolist()
 
-        return prediction_score, predicted_components
+        return predicted_components_name, prediction_score
 
-    def _get_recommendation_by_similarity(
-        self, issue, predicted_components, k_dev, k_issue, similarity_threshold
-    ):
+    def _predict_developers(self, issue: str) -> np.ndarray:
+        """
+        Generates developer recommendations based on the given issue.
+
+        Args:
+            issue (str): The issue for which developers are to be recommended.
+
+        Returns:
+            np.ndarray: A numpy array of all developer's prediction scores.
+        """
+        self._developer_prediction_model.eval()
+        with torch.no_grad():
+            tokenized_issue = self._developer_prediction_model.tokenize_text(issue)
+            predictions = self._developer_prediction_model(tokenized_issue)
+
+        output = torch.sum(torch.stack(predictions), 0)
+        normalized_score = self._normalize_tensor(output.squeeze(dim=0))
+
+        return normalized_score.cpu().numpy()
+
+    def _get_similarity_recommendations(
+        self,
+        issue: str,
+        k_rank: int,
+        similarity_threshold: float,
+    ) -> Tuple[List[str], np.ndarray]:
+        """
+        Generates recommendations based on developer similarity.
+
+        Args:
+            issue (str): The issue for which similarity recommendations are to be generated.
+            predicted_components_name (List[str]): List of predicted component names.
+            k_rank (int): The number of top ranked developers by similarity to consider.
+            similarity_threshold (float): The threshold for developer similarity scores.
+
+        Returns:
+            Tuple[List[str], np.ndarray]: A tuple containing a list of similar developers and their normalized similarity scores.
+        """
         similar_issues = self._get_top_k_similar_issues(
-            issue, k=k_issue, threshold=similarity_threshold
+            issue, k_rank, similarity_threshold
         )
-        historical_contribution = self._get_historical_contributors(
-            similar_issues=similar_issues, predicted_component_ids=predicted_components
+        dev_predictions_by_similarity = self._get_historical_contributors(
+            similar_issues
         )
 
-        logger.debug(historical_contribution)
+        similarity_devs = [dev[0] for dev in dev_predictions_by_similarity]
+        similarity_scores = [score[1] for score in dev_predictions_by_similarity]
 
-        top_k_devs = historical_contribution[:k_dev]
+        normalized_similarity_score = np.array([])
+        if similarity_scores:
+            normalized_similarity_score = self._normalize(similarity_scores)
 
-        return top_k_devs
+        return similarity_devs, normalized_similarity_score
 
-    def _get_historical_contributors(self, similar_issues, predicted_component_ids):
-        user_contribution_counts = {}
+    def _adjust_dev_scores_by_similarity(
+        self,
+        dev_prediction_score: np.ndarray,
+        dev_predictions_by_similarity: List[str],
+        normalized_similarity_score: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Adjusts developer scores based on similarity scores.
+
+        Args:
+            dev_prediction_score (np.ndarray): Normalized scores of all developers.
+            dev_predictions_by_similarity (List[str]): List of developer predictions by similarity.
+            normalized_similarity_score (np.ndarray): Normalized similarity scores.
+
+        Returns:
+            np.ndarray: An array of modified scores.
+        """
+        for i, sim_dev in enumerate(dev_predictions_by_similarity):
+            dev_id = self._developer2id_map[sim_dev]
+            dev_prediction_score[dev_id] += (
+                normalized_similarity_score[i] * self._similarity_prediction_weight
+            )
+
+        return dev_prediction_score
+
+    def _aggregate_rankings(
+        self,
+        dev_prediction_scores: np.ndarray,
+        similarity_devs: List[str],
+        normalized_similarity_score: np.ndarray,
+        k_dev: int,
+    ) -> Tuple[List[str], np.ndarray]:
+        """
+        Aggregates developer rankings.
+
+        Args:
+            dev_prediction_scores (List[float]): Prediction scores of all developers.
+            normalized_similarity_score (np.ndarray): Normalized similarity scores.
+            k_dev (int): The number of top developers to recommend.
+
+        Returns:
+            Tuple[List[str], np.ndarray]: A tuple containing the aggregated ranking of developers and the aggregated prediction score.
+        """
+
+        dev_prediction_scores = self._adjust_dev_scores_by_similarity(
+            dev_prediction_scores, similarity_devs, normalized_similarity_score
+        )
+        prediction_scores_tensor = torch.tensor(dev_prediction_scores)
+        aggregated_prediction_score, aggregated_predicted_devs = (
+            prediction_scores_tensor.topk(k_dev, 0, True, True)
+        )
+        aggregated_rank = [
+            self._id2developer_map[idx]
+            for idx in aggregated_predicted_devs.cpu().numpy()
+        ]
+
+        return aggregated_rank, aggregated_prediction_score.cpu().numpy()
+
+    def _get_historical_contributors(
+        self, similar_issues: List[Tuple[int, float]]
+    ) -> List[Tuple[str, float]]:
+        """
+        Retrieves historical contributors for similar issues.
+
+        Args:
+            similar_issues (List[Tuple[int, float]]): List of similar issues and their similarity scores.
+
+        Returns:
+            List[Tuple[str, float]]: A list of contributors and their contribution scores.
+        """
+        user_contribution_scores = {}
         skipped_users = set()
 
         for issue_index, sim_score in similar_issues:
-            base_points = sim_score
-
             issue = self._train_data.iloc[issue_index]
-
-            if self._component2id_map[issue.component] not in predicted_component_ids:
-                logger.warning(
-                    f"Skipping issue as label id {self._component2id_map[issue.component]} did not match with any of {predicted_component_ids}"
-                )
-                continue
-
             issue_number = issue.issue_number
             contributors = self._get_contribution_data(issue_number)
 
             for key, users in contributors.items():
-                for user in users:
+                for user_data in users:
+                    user = user_data[0].lower()
+                    created_at = user_data[1] if len(user_data) > 1 else None
+
                     if user not in self._expected_developers:
                         skipped_users.add(user)
                         continue
 
-                    if user in self._component_developers_map[issue.component]:
-                        user_contribution_counts[user] = (
-                            user_contribution_counts.get(user, 0) + base_points * 1.25
-                        )
-                    else:
-                        user_contribution_counts[user] = (
-                            user_contribution_counts.get(user, 0) + base_points
-                        )
+                    contribution_point = self._get_contribution_point(key)
+                    time_decay = self._calculate_time_decay(created_at)
 
-        if len(skipped_users) > 0:
+                    user_contribution_scores[user] = (
+                        user_contribution_scores.get(user, 0)
+                        + sim_score * contribution_point * time_decay
+                    )
+
+        if skipped_users:
             logger.warning(
-                f"Skipped users: {skipped_users} because they don't exist in the ${{expected_developers}} list"
+                f"Skipped users: {skipped_users} because they don't exist in the expected developers list"
             )
 
-        user_contribution_counts = sorted(
-            user_contribution_counts.items(), key=lambda x: x[1], reverse=True
+        return sorted(
+            user_contribution_scores.items(), key=lambda x: x[1], reverse=True
         )
-        return user_contribution_counts
 
-    def _get_contribution_data(self, issue_number):
+    def _get_contribution_point(self, key: str) -> float:
+        """
+        Returns the contribution point for a given contribution type.
+
+        Args:
+            key (str): The contribution type key.
+
+        Returns:
+            float: The contribution point for the given type.
+        """
+        if key in ["pull_request", "commits"]:
+            return self._contribution_score
+        elif key in ["last_assignment", "direct_assignment"]:
+            return self._direct_assignment_score
+        return self._discussion_score
+
+    def _calculate_time_decay(self, created_at: Optional[str]) -> float:
+        """
+        Calculates the time decay factor for a given creation time.
+
+        Args:
+            created_at (str): The creation time in ISO format.
+
+        Returns:
+            float: The time decay factor.
+        """
+        if not created_at:
+            return 1
+
+        contribution_date = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
+        days_since_contribution = (datetime.now() - contribution_date).days
+        return math.exp(-self._time_decay_factor * days_since_contribution)
+
+    def _get_contribution_data(
+        self, issue_number: int
+    ) -> Dict[str, List[Tuple[str, str]]]:
+        """
+        Retrieves the contribution data for a given issue number.
+
+        Args:
+            issue_number (int): The issue number.
+
+        Returns:
+            Dict[str, List[Tuple[str, str]]]: A dictionary containing contribution data.
+        """
         contributions = {}
         issue_file = f"{issue_number}.json"
         last_assignment = None
@@ -229,92 +351,96 @@ class TriagerX:
         if issue_file in self._all_issues:
             with open(os.path.join(self._issues_path, issue_file), "r") as file:
                 issue = json.load(file)
-
-                assignees = issue["assignees"]
+                assignees = issue.get("assignees", [])
                 assignee_logins = (
-                    [assignee["login"] for assignee in assignees]
-                    if len(assignees) > 0
+                    [(assignee["login"], None) for assignee in assignees]
+                    if assignees
                     else []
                 )
-
                 contributions["direct_assignment"] = assignee_logins
-
-                timeline = issue["timeline_data"]
-                pull_requests = []
-                commits = []
-                discussion = []
+                timeline = issue.get("timeline_data", [])
+                pull_requests, commits, discussion = [], [], []
 
                 for timeline_event in timeline:
-                    event = timeline_event["event"]
+                    event = timeline_event.get("event")
+                    created_at = timeline_event.get("created_at")
+                    actor = timeline_event.get("actor", {})
 
-                    if event == "cross-referenced" and timeline_event["source"][
-                        "issue"
-                    ].get("pull_request", None):
-                        actor = timeline_event["actor"]["login"]
-                        pull_requests.append(actor)
-                        pull_requests.append(actor)
+                    if not actor:
+                        continue
+
+                    actor = actor.get("login")
+
+                    if event == "cross-referenced" and timeline_event["source"].get(
+                        "issue", {}
+                    ).get("pull_request"):
+                        pull_requests.append((actor, created_at))
                         last_assignment = actor
-
-                    if event == "referenced" and timeline_event["commit_url"]:
-                        actor = timeline_event["actor"]["login"]
-                        commits.append(actor)
-                        commits.append(actor)
+                    elif event == "referenced" and timeline_event.get("commit_url"):
+                        commits.append((actor, created_at))
                         last_assignment = actor
+                    elif event == "commented":
+                        discussion.append((actor, created_at))
 
-                    if event == "commented":
-                        actor = timeline_event["actor"]["login"]
-                        discussion.append(actor)
-
-                contributions["direct_assignment"] = assignee_logins
                 contributions["pull_request"] = pull_requests
                 contributions["commits"] = commits
                 contributions["discussion"] = discussion
                 contributions["last_assignment"] = (
-                    [last_assignment] if last_assignment else []
+                    [(last_assignment, None)] if last_assignment else []
                 )
 
         return contributions
 
-    def _get_top_k_similar_issues(self, issue, k, threshold):
-        test_embed = self._similarity_model.encode(issue)
-        cos = util.cos_sim(test_embed, self._all_embeddings)
+    def _get_top_k_similar_issues(
+        self, issue: str, k: int, threshold: float
+    ) -> List[Tuple[int, float]]:
+        """
+        Retrieves the top k similar issues based on cosine similarity.
 
-        topk_values, topk_indices = torch.topk(cos, k=k)
+        Args:
+            issue (str): The issue for which similar issues are to be found.
+            k (int): The number of top similar issues to retrieve.
+            threshold (float): The similarity threshold.
+
+        Returns:
+            List[Tuple[int, float]]: A list of issue indices and their similarity scores.
+        """
+        issue_embedding = self._similarity_model.encode(issue)
+        cos_sim = util.cos_sim(issue_embedding, self._all_embeddings)
+        topk_values, topk_indices = torch.topk(cos_sim, k=k)
         topk_values = topk_values.cpu().numpy()[0]
         topk_indices = topk_indices.cpu().numpy()[0]
 
-        similar_issues = []
+        return [
+            (idx, sim_score)
+            for idx, sim_score in zip(topk_indices, topk_values)
+            if sim_score >= threshold
+        ]
 
-        for idx, sim_score in zip(topk_indices, topk_values):
-            if sim_score >= threshold:
-                similar_issues.append([idx, sim_score])
+    def _normalize(self, scores: np.ndarray) -> np.ndarray:
+        """
+        Normalizes a numpy array of scores.
 
-        return similar_issues
+        Args:
+            scores (np.ndarray): The array of scores to be normalized.
 
-    def _clean_data(self, issue_data):
-        issue_data = re.sub(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
-            " ",
-            issue_data,
-        )
-        issue_data = re.sub(" +", " ", issue_data)
-        issue_data = issue_data.strip()
-        issue_data = re.sub(r"0x[\da-fA-F]+", self._special_tokens["hex"], issue_data)
-        issue_data = re.sub(
-            r"\b[0-9a-fA-F]{16}\b", self._special_tokens["hex"], issue_data
-        )
-        issue_data = re.sub(
-            r"\b\d{2}:\d{2}:\d{2}\.\d{3}\b",
-            self._special_tokens["timestamp"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"\s*[-+]?\d*\.\d+([eE][-+]?\d+)?",
-            self._special_tokens["float"],
-            issue_data,
-        )
-        issue_data = re.sub(
-            r"=\s*-?\d+", f'= {self._special_tokens["param"]}', issue_data
-        )
+        Returns:
+            np.ndarray: The normalized array of scores.
+        """
+        min_score = np.min(scores)
+        max_score = np.max(scores)
+        return (scores - min_score) / (max_score - min_score)
 
-        return issue_data
+    def _normalize_tensor(self, tensor: torch.Tensor) -> torch.Tensor:
+        """
+        Normalizes a tensor of scores.
+
+        Args:
+            tensor (torch.Tensor): The tensor of scores to be normalized.
+
+        Returns:
+            torch.Tensor: The normalized tensor of scores.
+        """
+        min_val = torch.min(tensor)
+        max_val = torch.max(tensor)
+        return (tensor - min_val) / (max_val - min_val)

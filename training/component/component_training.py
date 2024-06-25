@@ -17,9 +17,8 @@ from transformers import get_linear_schedule_with_warmup
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
 
 from triagerx.dataset.text_processor import TextProcessor
-from triagerx.dataset.triage_dataset import TriageDataset
 from triagerx.loss.loss_functions import *
-from triagerx.model.lbt_p_deberta import LBTPDeberta
+from triagerx.model.module_factory import DatasetFactory, ModelFactory
 from triagerx.trainer.model_evaluator import ModelEvaluator
 from triagerx.trainer.model_trainer import ModelTrainer
 from triagerx.trainer.train_config import TrainConfig
@@ -32,6 +31,9 @@ parser = argparse.ArgumentParser(description="Training script arguments")
 parser.add_argument(
     "--config", type=str, required=True, help="Path to training config file"
 )
+parser.add_argument(
+    "--dataset_path", type=str, required=True, help="Path of the dataset"
+)
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
 args = parser.parse_args()
 
@@ -39,15 +41,19 @@ logger.debug(f"Loading training configuration from: {args.config}")
 with open(args.config, "r") as stream:
     config = yaml.safe_load(stream)
 
+dataset_path = args.dataset_path
+seed = args.seed
+
 # Set each field from the YAML config
 use_special_tokens = config.get("use_special_tokens")
 use_summary = config.get("use_summary")
 use_description = config.get("use_description")
-dataset_path = config.get("dataset_path")
 target_components = config.get("target_components")
-base_transformer_model = config.get("base_transformer_model")
+base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
-seed = args.seed
+num_classifiers = config.get("num_classifiers")
+max_tokens = config.get("max_tokens")
+model_key = config.get("model_key")
 val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
@@ -112,9 +118,14 @@ logger.info(f"Train dataset size: {len(df_train)}\nTest dataset size: {len(df_te
 
 
 # Generate component ids
-label2idx = {
-    label: idx for idx, label in enumerate(sorted(list(df_train["component"].unique())))
-}
+all_components = sorted(list(df_train["component"].unique()))
+label2idx = {}
+idx2labels = {}
+
+for idx, comp in enumerate(all_components):
+    label2idx[comp] = idx
+    idx2labels[idx] = comp
+
 df_train["component_id"] = [
     label2idx[component] for component in df_train["component"].values
 ]
@@ -147,28 +158,31 @@ class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))
 weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
-model = LBTPDeberta(
-    len(df_train.component_id.unique()),
+model = ModelFactory.get_model(
+    model_key=model_key,
+    output_size=len(df_train.component_id.unique()),
     unfrozen_layers=unfrozen_layers,
+    num_classifiers=num_classifiers,
+    base_models=base_transformer_models,
     dropout=dropout,
-    base_model=base_transformer_model,
+    max_tokens=max_tokens,
+    label_map=idx2labels,
 )
-criterion = CombinedLoss()
-tokenizer = model.tokenizer()
 
-if use_special_tokens:
-    special_tokens = TextProcessor.SPECIAL_TOKENS
-    logger.debug("Resizing model embedding for new special tokens...")
-    special_tokens_dict = {"additional_special_tokens": list(special_tokens.values())}
-    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
-    model.base_model.resize_token_embeddings(len(tokenizer))
+criterion = CombinedLoss()
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
 logger.debug("preparing datasets...")
-train_ds = TriageDataset(df_train, tokenizer, "text", "component_id")
-val_ds = TriageDataset(df_val, tokenizer, "text", "component_id")
-test_ds = TriageDataset(df_test, tokenizer, "text", "component_id")
+train_ds = DatasetFactory.get_dataset(
+    df_train, model, "text", "component_id", max_length=max_tokens
+)
+val_ds = DatasetFactory.get_dataset(
+    df_val, model, "text", "component_id", max_length=max_tokens
+)
+test_ds = DatasetFactory.get_dataset(
+    df_test, model, "text", "component_id", max_length=max_tokens
+)
 
 train_dataloader = DataLoader(
     dataset=train_ds,
@@ -198,7 +212,7 @@ train_config = TrainConfig(
     epochs=epochs,
     output_path=weights_save_location,
     device=device,
-    topk_indices=3,
+    topk_indices=topk_indices,
     log_manager=log_manager,
     early_stopping_patience=early_stopping_patience,
     scheduler=scheduler,
@@ -222,7 +236,7 @@ model_evaluator.evaluate(
     dataloader=test_dataloader,
     device=device,
     run_name=run_name,
-    topk_index=topk_indices,
+    topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
 )

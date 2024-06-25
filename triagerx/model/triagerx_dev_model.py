@@ -1,11 +1,12 @@
 import torch
-import torch.nn.functional as F
 from loguru import logger
 from torch import nn
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 
+from triagerx.model.prediction_model import PredictionModel
 
-class TriagerxDevModel(nn.Module):
+
+class TriagerxDevModel(PredictionModel):
     def __init__(
         self,
         output_size,
@@ -15,8 +16,9 @@ class TriagerxDevModel(nn.Module):
         dropout=0.1,
         max_tokens=512,
         num_filters=256,
+        label_map=None,
     ) -> None:
-        super().__init__()
+        super(TriagerxDevModel, self).__init__()
 
         # Initialize base models and their respective tokenizers
         logger.debug(f"Loading base transformer models: {base_models}")
@@ -29,6 +31,7 @@ class TriagerxDevModel(nn.Module):
         self.tokenizers = [
             AutoTokenizer.from_pretrained(model) for model in base_models
         ]
+        self._label_map = label_map
 
         # Freeze embedding layers for all models
         for base_model in self.base_models:
@@ -147,3 +150,18 @@ class TriagerxDevModel(nn.Module):
                 f"Invalid model index, choose between 0 and {len(self.tokenizers) - 1}"
             )
         return self.tokenizers[model_idx]
+
+    def tokenize_text(self, text):
+        return [
+            tokenizer(
+                text,
+                padding="max_length",
+                max_length=self._max_tokens,
+                truncation=True,
+                return_tensors="pt",
+            )
+            for tokenizer in self.tokenizers
+        ]
+
+    def get_label_map(self):
+        return self._label_map

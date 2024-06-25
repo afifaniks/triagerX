@@ -8,12 +8,6 @@ class TextProcessor:
     SPECIAL_TOKENS = {
         "hex": "[HEX]",
         "timestamp": "[TIMESTAMP]",
-        "numeric": "[NUMERIC]",
-        "param": "[PARAM_VALUE]",
-        "version": "[VERSION]",
-        "ip": "[IP_ADDRESS]",
-        "filepath": "[FILE_PATH]",
-        "url": "[URL]",
     }
 
     @staticmethod
@@ -139,29 +133,27 @@ class TextProcessor:
         cleaned_text = text.strip()
         special_tokens = TextProcessor.SPECIAL_TOKENS
 
-        cleaned_text = re.sub(
-            r"(https?|ftp):\/\/[^\s/$.?#].[^\s]*", special_tokens["url"], cleaned_text
-        )
+        cleaned_text = re.sub(r"(https?|ftp):\/\/[^\s/$.?#].[^\s]*", "", cleaned_text)
         cleaned_text = re.sub(r"0x[\da-fA-F]+", special_tokens["hex"], cleaned_text)
         cleaned_text = re.sub(
             r"\b[0-9a-fA-F]{16}\b", special_tokens["hex"], cleaned_text
         )
-        cleaned_text = re.sub(
-            r"\b.*/([^/]+)", rf"{special_tokens['filepath']}/\1", cleaned_text
-        )
-        cleaned_text = re.sub(
-            r"\b([A-Za-z]:)?.*\\([^\\]+)",
-            rf"{special_tokens['filepath']}/\2",
-            cleaned_text,
-        )
-        cleaned_text = re.sub(
-            r"\b(?:\d{1,3}\.){3}\d{1,3}\b", special_tokens["ip"], cleaned_text
-        )
-        cleaned_text = re.sub(
-            r"(?<!\w)\d+\.\d+\.\d+(\.\d+)*(_\d+)?(-[a-zA-Z]+\d*)?(?!\w)",
-            special_tokens["version"],
-            cleaned_text,
-        )
+        # cleaned_text = re.sub(
+        #     r"\b.*/([^/]+)", rf"{special_tokens['filepath']}/\1", cleaned_text
+        # )
+        # cleaned_text = re.sub(
+        #     r"\b([A-Za-z]:)?.*\\([^\\]+)",
+        #     rf"{special_tokens['filepath']}/\2",
+        #     cleaned_text,
+        # )
+        # cleaned_text = re.sub(
+        #     r"\b(?:\d{1,3}\.){3}\d{1,3}\b", special_tokens["ip"], cleaned_text
+        # )
+        # cleaned_text = re.sub(
+        #     r"(?<!\w)\d+\.\d+\.\d+(\.\d+)*(_\d+)?(-[a-zA-Z]+\d*)?(?!\w)",
+        #     special_tokens["version"],
+        #     cleaned_text,
+        # )
         cleaned_text = re.sub(
             r"\b\d{2}:\d{2}:\d{2}:\d{4,} GMT\b",
             special_tokens["timestamp"],
@@ -177,13 +169,13 @@ class TextProcessor:
             special_tokens["timestamp"],
             cleaned_text,
         )
-        cleaned_text = re.sub(
-            r"\b[-+]?\d*\.\d+([eE][-+]?\d+)?\b", special_tokens["numeric"], cleaned_text
-        )
-        cleaned_text = re.sub(r"\d{4,}\b", special_tokens["numeric"], cleaned_text)
-        cleaned_text = re.sub(
-            r"=\s*-?\d+", f'= {special_tokens["param"]}', cleaned_text
-        )
+        # cleaned_text = re.sub(
+        #     r"\b[-+]?\d*\.\d+([eE][-+]?\d+)?\b", special_tokens["numeric"], cleaned_text
+        # )
+        # cleaned_text = re.sub(r"\d{4,}\b", special_tokens["numeric"], cleaned_text)
+        # cleaned_text = re.sub(
+        #     r"=\s*-?\d+", f'= {special_tokens["param"]}', cleaned_text
+        # )
         cleaned_text = re.sub(r"```", "", cleaned_text)
         cleaned_text = re.sub(r"-{3,}", "", cleaned_text)
         cleaned_text = re.sub(r"[\*#=+\-]{3,}", "", cleaned_text)
@@ -231,17 +223,17 @@ class TextProcessor:
         cleaned_text = re.sub(r"\b[0-9a-fA-F]{16}\b", "<hex>", cleaned_text)
         cleaned_text = re.sub(
             r"\b\d{2}:\d{2}:\d{2}:\d{4,} GMT\b",
-            "<timestamp>",
+            "",
             cleaned_text,
         )
         cleaned_text = re.sub(
             r"\b\d{2}:\d{2}:\d{2}(\.\d{2,3})?\b",
-            "<timestamp>",
+            "",
             cleaned_text,
         )
         cleaned_text = re.sub(
             r"\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\b",
-            "<timestamp>",
+            "",
             cleaned_text,
         )
         cleaned_text = re.sub(r"```", "", cleaned_text)
