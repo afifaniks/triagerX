@@ -1,0 +1,54 @@
+{
+  "0": {
+    "precision": 0.76,
+    "recall": 0.7125,
+    "f1-score": 0.7354838709677418,
+    "support": 80.0
+  },
+  "1": {
+    "precision": 0.6666666666666666,
+    "recall": 0.5777777777777777,
+    "f1-score": 0.619047619047619,
+    "support": 45.0
+  },
+  "2": {
+    "precision": 0.5,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.4,
+    "support": 9.0
+  },
+  "3": {
+    "precision": 0.5,
+    "recall": 0.5714285714285714,
+    "f1-score": 0.5333333333333333,
+    "support": 7.0
+  },
+  "4": {
+    "precision": 0.5921052631578947,
+    "recall": 0.7627118644067796,
+    "f1-score": 0.6666666666666666,
+    "support": 118.0
+  },
+  "5": {
+    "precision": 0.8753541076487252,
+    "recall": 0.8262032085561497,
+    "f1-score": 0.8500687757909215,
+    "support": 374.0
+  },
+  "accuracy": 0.7725118483412322,
+  "macro avg": {
+    "precision": 0.6490210062455478,
+    "recall": 0.630659125917102,
+    "f1-score": 0.634100044301047,
+    "support": 633.0
+  },
+  "weighted avg": {
+    "precision": 0.7836506434648576,
+    "recall": 0.7725118483412322,
+    "f1-score": 0.7750735776941025,
+    "support": 633.0
+  },
+  "top3_acc": 0.9826224328593997,
+  "run_name": "component_triagerx_u3_6_classes_seed42",
+  "model_location": "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
+}

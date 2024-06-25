@@ -41,6 +41,21 @@ elif [ "$CONFIG_PARAM" == "mc-cnn" ]; then
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/cnn_transformer.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_core/classifier_data_20.csv \
         --seed 42
+
+elif [ "$CONFIG_PARAM" == "mf-triagerx" ]; then
+    echo "Running MF (Triagerx Model) configuration"
+    python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/triagerx.yaml \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
+        --seed 42
+
+elif [ "$CONFIG_PARAM" == "mf-cnn" ]; then
+    echo "Running MF (Triagerx Model) configuration"
+    python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/cnn_transformer.yaml \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
+        --seed 42
+
 else
-    echo "Invalid parameter. Use 'gc-{X}' for GC configuration or 'mc-{X}' for Mozilla Core configuration."
+    echo "Invalid parameter. Use 'gc-{X}' for GC configuration, 'mf-{X}' for Mozilla Firefox configuration or 'mc-{X}' for Mozilla Core configuration."
 fi

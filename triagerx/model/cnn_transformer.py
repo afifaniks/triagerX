@@ -97,16 +97,13 @@ class CNNTransformer(PredictionModel):
         return self._tokenizer
 
     def tokenize_text(self, text):
-        return [
-            tokenizer(
-                text,
-                padding="max_length",
-                max_length=self._max_tokens,
-                truncation=True,
-                return_tensors="pt",
-            )
-            for tokenizer in self.tokenizers
-        ]
+        return self._tokenizer(
+            text,
+            padding="max_length",
+            max_length=self._max_tokens,
+            truncation=True,
+            return_tensors="pt",
+        )
 
     def get_label_map(self):
         return self._label_map
