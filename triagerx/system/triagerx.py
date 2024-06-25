@@ -275,7 +275,7 @@ class TriagerX:
 
             for key, users in contributors.items():
                 for user_data in users:
-                    user = user_data[0]
+                    user = user_data[0].lower()
                     created_at = user_data[1] if len(user_data) > 1 else None
 
                     if user not in self._expected_developers:
@@ -364,10 +364,12 @@ class TriagerX:
                 for timeline_event in timeline:
                     event = timeline_event.get("event")
                     created_at = timeline_event.get("created_at")
-                    actor = timeline_event.get("actor", {}).get("login")
+                    actor = timeline_event.get("actor", {})
 
                     if not actor:
                         continue
+
+                    actor = actor.get("login")
 
                     if event == "cross-referenced" and timeline_event["source"].get(
                         "issue", {}
