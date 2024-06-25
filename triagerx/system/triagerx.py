@@ -285,7 +285,7 @@ class TriagerX:
         Returns:
             List[Tuple[str, float]]: A list of contributors and their contribution scores.
         """
-        user_contribution_scores = {}
+        user_contribution_scores = {dev: 0 for dev in self._id2developer_map.values()}
         skipped_users = set()
 
         for issue_index, sim_score in similar_issues:
