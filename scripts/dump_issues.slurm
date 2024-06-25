@@ -9,4 +9,7 @@
 # Activate conda environment
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate triagerx
-python /home/mdafifal.mamun/notebooks/triagerX/util/issue_dump.py --path /home/mdafifal.mamun/notebooks/triagerX/data/openj9_issue_data
+python /home/mdafifal.mamun/notebooks/triagerX/util/issue_dump.py \
+    --path /home/mdafifal.mamun/notebooks/triagerX/data/typescript \
+    --owner microsoft \
+    --repo TypeScript

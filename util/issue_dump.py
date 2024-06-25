@@ -118,16 +118,16 @@ def dump_issues(owner, repo, gh_token, path):
         page += 1
 
 
-# Example usage
-owner = "eclipse-openj9"
-repo = "openj9"
 gh_token = os.environ["GH_TOKEN"]
 
 parser = argparse.ArgumentParser(description="Dump GitHub issues to a specified path.")
 parser.add_argument(
     "--path", type=str, required=True, help="Output path for dumping issues"
 )
+parser.add_argument("--owner", type=str, required=True, help="Github repo owner")
+parser.add_argument("--repo", type=str, required=True, help="Github repo")
+
 args = parser.parse_args()
 
-
-dump_issues(owner, repo, gh_token, args.path)
+print(f"Dumping data for: {args.owner}/{args.repo}")
+dump_issues(args.owner, args.repo, gh_token, args.path)
