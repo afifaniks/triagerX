@@ -48,7 +48,7 @@ class RecommendationService:
         self.triager = TriagerX(
             component_prediction_model=self._component_model,
             developer_prediction_model=self._developer_model,
-            similarity_model=self._developer_model,
+            similarity_model=self._similarity_model,
             train_data=pd.read_csv(self._config["data"]["train_data"]),
             train_embeddings=self._config["similarity_model"]["embeddings_path"],
             issues_path=self._config["data"]["issues_path"],
@@ -75,7 +75,7 @@ class RecommendationService:
 
     def _load_trained_model(self, model_config: Dict):
         logger.debug(f"Loading pretrained model: {model_config['weights_path']}")
-        return get_trained_model(model_config)
+        return get_trained_model(model_config, self._device)
 
     def get_recommendation(self, issue_title: str, issue_description: str):
         processed_issue = TextProcessor.prepare_text(issue_title, issue_description)
@@ -83,6 +83,8 @@ class RecommendationService:
             processed_issue,
             k_comp=3,
             k_dev=3,
-            k_rank=self._config["maximum_similar_issues"],
-            similarity_threshold=self._config["similarity_threshold"],
+            k_rank=self._config["contribution_score_params"]["maximum_similar_issues"],
+            similarity_threshold=self._config["contribution_score_params"][
+                "similarity_threshold"
+            ],
         )
