@@ -109,6 +109,12 @@ def dump_issues(owner, repo, gh_token, path):
         filtered_issues = filter_pull_requests(issues)
 
         for issue in filtered_issues:
+            destination = os.path.join(path, str(issue["number"]) + ".json")
+
+            if os.path.exists(destination):
+                print(f"Issue: {issue['number']} already downloaded! Skipping...")
+                continue
+
             print(f"Extracting issue data: {issue['number']}")
             issue["timeline_data"] = get_field_data(issue["timeline_url"], headers)
             issue["comments_data"] = get_field_data(issue["comments_url"], headers)
