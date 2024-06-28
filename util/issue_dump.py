@@ -135,5 +135,7 @@ parser.add_argument("--repo", type=str, required=True, help="Github repo")
 
 args = parser.parse_args()
 
+os.makedirs(args.path, exist_ok=True)
+
 print(f"Dumping data for: {args.owner}/{args.repo}")
 dump_issues(args.owner, args.repo, gh_token, args.path)
