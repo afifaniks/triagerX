@@ -1,0 +1,243 @@
+{
+  "0": {
+    "precision": 0.3684210526315789,
+    "recall": 0.4772727272727273,
+    "f1-score": 0.4158415841584158,
+    "support": 88.0
+  },
+  "1": {
+    "precision": 0.34513274336283184,
+    "recall": 0.3786407766990291,
+    "f1-score": 0.3611111111111111,
+    "support": 103.0
+  },
+  "2": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "3": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "4": {
+    "precision": 0.4301675977653631,
+    "recall": 0.3684210526315789,
+    "f1-score": 0.39690721649484534,
+    "support": 209.0
+  },
+  "5": {
+    "precision": 0.46153846153846156,
+    "recall": 0.5192307692307693,
+    "f1-score": 0.4886877828054299,
+    "support": 104.0
+  },
+  "7": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 4.0
+  },
+  "9": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "10": {
+    "precision": 0.25,
+    "recall": 0.15789473684210525,
+    "f1-score": 0.1935483870967742,
+    "support": 19.0
+  },
+  "11": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 24.0
+  },
+  "12": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "13": {
+    "precision": 0.11290322580645161,
+    "recall": 0.20588235294117646,
+    "f1-score": 0.14583333333333331,
+    "support": 34.0
+  },
+  "14": {
+    "precision": 0.1111111111111111,
+    "recall": 0.4,
+    "f1-score": 0.1739130434782609,
+    "support": 5.0
+  },
+  "15": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 27.0
+  },
+  "16": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "17": {
+    "precision": 0.30303030303030304,
+    "recall": 0.22988505747126436,
+    "f1-score": 0.26143790849673204,
+    "support": 87.0
+  },
+  "18": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "19": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 13.0
+  },
+  "20": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "21": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "22": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "23": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "24": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "25": {
+    "precision": 0.1951219512195122,
+    "recall": 0.4,
+    "f1-score": 0.26229508196721313,
+    "support": 20.0
+  },
+  "26": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 36.0
+  },
+  "27": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "28": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "29": {
+    "precision": 0.7926829268292683,
+    "recall": 0.5803571428571429,
+    "f1-score": 0.6701030927835052,
+    "support": 112.0
+  },
+  "30": {
+    "precision": 0.07142857142857142,
+    "recall": 0.07142857142857142,
+    "f1-score": 0.07142857142857142,
+    "support": 14.0
+  },
+  "31": {
+    "precision": 0.5238095238095238,
+    "recall": 0.22,
+    "f1-score": 0.3098591549295775,
+    "support": 50.0
+  },
+  "32": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "33": {
+    "precision": 0.6428571428571429,
+    "recall": 0.38571428571428573,
+    "f1-score": 0.48214285714285715,
+    "support": 70.0
+  },
+  "35": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "36": {
+    "precision": 0.574468085106383,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.421875,
+    "support": 81.0
+  },
+  "37": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "38": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "39": {
+    "precision": 0.06060606060606061,
+    "recall": 0.125,
+    "f1-score": 0.0816326530612245,
+    "support": 16.0
+  },
+  "accuracy": 0.34405719392314565,
+  "macro avg": {
+    "precision": 0.14171023667844765,
+    "recall": 0.13116380557897253,
+    "f1-score": 0.12801666968345546,
+    "support": 1119.0
+  },
+  "weighted avg": {
+    "precision": 0.4055028325384998,
+    "recall": 0.34405719392314565,
+    "f1-score": 0.36267601490697654,
+    "support": 1119.0
+  },
+  "top3_acc": 0.6023235031277927,
+  "top5_acc": 0.6988382484361036,
+  "top10_acc": 0.8337801608579088,
+  "top20_acc": 0.9401251117068812,
+  "run_name": "cnn_deberta-large_u3_40_classes_last_dev_seed42",
+  "model_location": "/work/disa_lab/projects/triagerx/models/typescript/cnn_deberta-large_u3_40_classes_last_dev_seed42.pt"
+}
