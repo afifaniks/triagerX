@@ -1,9 +1,9 @@
 use_description: true
 base_transformer_models: 
- - "roberta-base"
+ - "microsoft/deberta-base"
 model_key: "cnn-transformer"
-unfrozen_layers: 3
-num_classifiers: 3
+unfrozen_layers: -1
+num_classifiers: 1
 val_size: 0.1
 test_size: 0.1
 dropout: 0.2
@@ -17,9 +17,9 @@ topk_indices:
   - 5
   - 10
   - 20
-run_name: "cnn_roberta-base_u3_50_classes_last_dev"
+run_name: "cnn_deberta-base-full_u3_50_classes_last_dev"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
-architecture: "CNN Roberta"
+architecture: "-"
 dataset: "Openj9 Issues"

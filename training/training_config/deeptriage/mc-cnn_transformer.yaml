@@ -19,9 +19,9 @@ topk_indices:
   - 5
   - 10
   - 20
-run_name: "deberta-large-full_dt_gc_th20"
+run_name: "cnn_deberta-large-full_dt_mc_th20"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
-wandb_project: "google_chromium"
-architecture: ""
+wandb_project: "mozilla_core"
+architecture: "-"
 dataset: "Deeptriage Issues"
