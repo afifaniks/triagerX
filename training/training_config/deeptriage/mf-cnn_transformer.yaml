@@ -1,0 +1,27 @@
+use_description: true
+base_transformer_models: 
+ - "microsoft/deberta-large"
+model_key: "cnn-transformer"
+unfrozen_layers: 0
+num_classifiers: 1
+total_folds: 10
+fold_number: 9
+val_size: 0.2
+test_size: 0.2
+dropout: 0.2
+learning_rate: 0.00001
+epochs: 20
+batch_size: 10
+max_tokens: 256
+early_stopping_patience: null
+topk_indices:
+  - 3
+  - 5
+  - 10
+  - 20
+run_name: "cnn_deberta-large-frozen_dt_mf_th20"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+wandb_project: "mozilla_firefox"
+architecture: "-"
+dataset: "Deeptriage Issues"
