@@ -3,7 +3,7 @@
 #SBATCH -t 1-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=50G
-#SBATCH --partition=gpu-v100 --gres=gpu:1
+#SBATCH --partition=disa --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/dt_%j.out
 
 # Check if the first parameter is "gc" or "mc"
@@ -17,14 +17,14 @@ conda activate triagerx
 if [ "$CONFIG_PARAM" == "gc-cnn" ]; then
     echo "Running GC (CNN Transformer) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
-        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/cnn_transformer.yaml \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/gc-cnn_transformer.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv \
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "gc-triagerx" ]; then
     echo "Running GC (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
-        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/triagerx.yaml \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/gc-triagerx.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv \
         --seed 42
         
@@ -45,14 +45,14 @@ elif [ "$CONFIG_PARAM" == "mc-cnn" ]; then
 elif [ "$CONFIG_PARAM" == "mf-triagerx" ]; then
     echo "Running MF (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
-        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/triagerx.yaml \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/mf-triagerx.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "mf-cnn" ]; then
     echo "Running MF (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
-        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/cnn_transformer.yaml \
+        --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/mf-cnn_transformer.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
         --seed 42
 
