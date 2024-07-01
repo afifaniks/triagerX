@@ -33,16 +33,24 @@ class TriagerxModel(PredictionModel):
         ]
         self._label_map = label_map
 
-        # Freeze embedding layers for all models
-        for base_model in self.base_models:
-            for p in base_model.embeddings.parameters():
-                p.requires_grad = False
-
-        # Freeze encoder layers until the last `unfrozen_layers` layers for all models
-        for base_model in self.base_models:
-            for i in range(0, base_model.config.num_hidden_layers - unfrozen_layers):
-                for p in base_model.encoder.layer[i].parameters():
+        if unfrozen_layers == -1:
+            logger.debug("Initiating full training...")
+        else:
+            # Freeze embedding layers for all models
+            for base_model in self.base_models:
+                logger.debug(
+                    f"Freezing {base_model.config.num_hidden_layers - unfrozen_layers} layers"
+                )
+                for p in base_model.embeddings.parameters():
                     p.requires_grad = False
+
+            # Freeze encoder layers until the last `unfrozen_layers` layers for all models
+            for base_model in self.base_models:
+                for i in range(
+                    0, base_model.config.num_hidden_layers - unfrozen_layers
+                ):
+                    for p in base_model.encoder.layer[i].parameters():
+                        p.requires_grad = False
 
         # Define filter sizes for convolution layers
         filter_sizes = [3, 4, 5, 6]

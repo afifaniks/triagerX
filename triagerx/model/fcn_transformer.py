@@ -1,4 +1,5 @@
 import torch
+from loguru import logger
 from torch import nn
 from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
 
@@ -22,14 +23,22 @@ class FCNTransformer(PredictionModel):
         self._tokenizer = AutoTokenizer.from_pretrained(base_model)
         self._label_map = label_map
 
-        # Freeze embedding layers
-        for p in self.base_model.embeddings.parameters():
-            p.requires_grad = False
-
-        # Freeze encoder layers till last {unfrozen_layers} layers
-        for i in range(0, self.base_model.config.num_hidden_layers - unfrozen_layers):
-            for p in self.base_model.encoder.layer[i].parameters():
+        if unfrozen_layers == -1:
+            logger.debug("Initiating full training...")
+        else:
+            logger.debug(
+                f"Freezing {self.base_model.config.num_hidden_layers - unfrozen_layers} layers"
+            )
+            # Freeze embedding layers
+            for p in self.base_model.embeddings.parameters():
                 p.requires_grad = False
+
+            # Freeze encoder layers till last {unfrozen_layers} layers
+            for i in range(
+                0, self.base_model.config.num_hidden_layers - unfrozen_layers
+            ):
+                for p in self.base_model.encoder.layer[i].parameters():
+                    p.requires_grad = False
 
         self._max_tokens = max_tokens
         self._embed_size = self.base_model.config.hidden_size
