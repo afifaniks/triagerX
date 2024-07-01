@@ -1,7 +1,7 @@
 use_description: true
 base_transformer_models: 
  - "roberta-large"
-model_key: "cnn-transformer"
+model_key: "fcn-transformer"
 unfrozen_layers: -1
 num_classifiers: 1
 val_size: 0.1
@@ -17,7 +17,7 @@ topk_indices:
   - 5
   - 10
   - 20
-run_name: "openj9_cnn_roberta-large-full_u3_50_classes_last_dev"
+run_name: "openj9_fcn_roberta-large-full_u3_50_classes_last_dev"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
