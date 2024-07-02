@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 import yaml
 from loguru import logger
-from torch.nn import CrossEntropyLoss
+from sklearn.model_selection import train_test_split
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -15,6 +15,7 @@ from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
 
 sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
+
 
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.loss.loss_functions import *
@@ -49,19 +50,17 @@ use_description = config.get("use_description")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
 num_classifiers = config.get("num_classifiers")
-max_tokens = config.get("max_tokens")
-model_key = config.get("model_key")
-num_cv = config.get("total_folds")
-block = config.get("fold_number")
 val_size = config.get("val_size")
 test_size = config.get("test_size")
 dropout = config.get("dropout")
+max_tokens = config.get("max_tokens")
+model_key = config.get("model_key")
 learning_rate = config.get("learning_rate")
 epochs = config.get("epochs")
 batch_size = config.get("batch_size")
 early_stopping_patience = config.get("early_stopping_patience")
 topk_indices = config.get("topk_indices")
-run_name = config.get("run_name") + f"_block{block}_seed{seed}"
+run_name = config.get("run_name") + f"_seed{seed}"
 weights_save_location = os.path.join(
     config.get("weights_save_location"), f"{run_name}.pt"
 )
@@ -80,7 +79,8 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-log_manager = EpochLogManager(wandb_config=wandb_config)
+
+log_manager = EpochLogManager(wandb_config)
 torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
@@ -91,29 +91,25 @@ logger.debug(f"Weights will be saved in: {weights_save_location}")
 logger.debug(f"Classification reports will be saved in: {test_report_location}")
 logger.debug(f"Raw dataset size: {len(raw_df)}")
 
+raw_df = raw_df.rename(columns={"assignees": "owner", "issue_body": "description"})
 df = TextProcessor.prepare_dataframe(
     raw_df,
     use_special_tokens=False,
     use_summary=False,
     use_description=use_description,
     component_training=False,
-    is_openj9=False,
 )
 
+df = df.sort_values(by="issue_number")
 df = df[df["owner"].notna()]
+df["owner"] = df.owner.apply(lambda x: x.lower())
 
 num_issues = len(df)
 logger.info(f"Total number of issues after processing: {num_issues}")
 
-samples_per_block = len(df) // num_cv
-sliced_df = df[: samples_per_block * (block + 1)]
+df = df.sort_values(by="issue_number")
 
-print(f"Samples per block: {samples_per_block}, Selected block: {block}")
-
-# Train and Validation preparation
-
-df_train = sliced_df[: samples_per_block * block]
-df_test = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
+df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
 sample_threshold = 20
 developers = df_train["owner"].value_counts()
@@ -128,14 +124,13 @@ unwanted = list(test_owners - train_owners)
 df_test = df_test[~df_test["owner"].isin(unwanted)]
 
 logger.info(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
-logger.info(f"Number of developers in train: {len(df_train.owner.unique())}")
-logger.info(f"Number of developers in test: {len(df_test.owner.unique())}")
+logger.info(f"Number of developers: {len(df_train.owner.unique())}")
 
 logger.info(f"Train dataset size: {len(df_train)}")
 logger.info(f"Test dataset size: {len(df_test)}")
 
 
-# # Generate component ids
+# # Generate label ids
 lbl2idx = {}
 idx2lbl = {}
 
@@ -149,6 +144,9 @@ df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
 df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
 
 # assert set(df_train.owner.unique()) == set(df_test.owner.unique())
+
+df_train.to_csv("df_train_powertoys.csv")
+df_test.to_csv("df_test_powertoys.csv")
 
 class_counts = np.bincount(df_train["owner_id"])
 num_samples = sum(class_counts)
@@ -170,12 +168,10 @@ model = ModelFactory.get_model(
     label_map=idx2lbl,
 )
 
-criterion = CrossEntropyLoss() if model_key == "fcn-transformer" else CombinedLoss()
-logger.debug(f"Selected loss function: {criterion}")
+criterion = CombinedLoss()
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
-logger.debug("preparing datasets...")
 logger.debug("preparing datasets...")
 train_ds = DatasetFactory.get_dataset(
     df_train, model, "text", "owner_id", max_length=max_tokens
@@ -238,6 +234,5 @@ model_evaluator.evaluate(
     topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
-    combined_loss=False if model_key == "fcn-tranformer" else True,
 )
 logger.info("Finished testing.")
