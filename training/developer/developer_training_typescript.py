@@ -8,6 +8,7 @@ import torch
 import yaml
 from loguru import logger
 from sklearn.model_selection import train_test_split
+from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -168,7 +169,8 @@ model = ModelFactory.get_model(
     label_map=idx2lbl,
 )
 
-criterion = CombinedLoss()
+criterion = CrossEntropyLoss() if model_key == "fcn-transformer" else CombinedLoss()
+logger.debug(f"Selected loss function: {criterion}")
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
@@ -234,5 +236,6 @@ model_evaluator.evaluate(
     topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
+    combined_loss=False if model_key == "fcn-transformer" else True,
 )
 logger.info("Finished testing.")
