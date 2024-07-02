@@ -80,7 +80,7 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-log_manager = EpochLogManager(wandb_config=wandb_config)
+log_manager = EpochLogManager(wandb_config=None)
 torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
@@ -219,9 +219,9 @@ train_config = TrainConfig(
 
 logger.info("Starting training...")
 
-model_trainer = ModelTrainer(train_config)
-model_trainer.train()
-log_manager.finish()
+# model_trainer = ModelTrainer(train_config)
+# model_trainer.train()
+# log_manager.finish()
 
 logger.info("Finished training.")
 
@@ -238,6 +238,6 @@ model_evaluator.evaluate(
     topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
-    combined_loss=False if model_key == "fcn-tranformer" else True,
+    combined_loss=False if model_key == "fcn-transformer" else True,
 )
 logger.info("Finished testing.")
