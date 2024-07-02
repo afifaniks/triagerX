@@ -80,7 +80,7 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-log_manager = EpochLogManager(wandb_config=None)
+log_manager = EpochLogManager(wandb_config=wandb_config)
 torch.manual_seed(seed=seed)
 
 raw_df = pd.read_csv(dataset_path)
@@ -219,9 +219,9 @@ train_config = TrainConfig(
 
 logger.info("Starting training...")
 
-# model_trainer = ModelTrainer(train_config)
-# model_trainer.train()
-# log_manager.finish()
+model_trainer = ModelTrainer(train_config)
+model_trainer.train()
+log_manager.finish()
 
 logger.info("Finished training.")
 
