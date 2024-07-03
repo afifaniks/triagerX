@@ -3,7 +3,7 @@
 #SBATCH -t 1-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=50G
-#SBATCH --partition=gpu-v100 --gres=gpu:1
+#SBATCH --partition=gpu-a100 --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/dt_%j.out
 
 # Check if the first parameter is "gc" or "mc"
@@ -64,14 +64,14 @@ elif [ "$CONFIG_PARAM" == "mf-triagerx" ]; then
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "mf-cnn" ]; then
-    echo "Running MF (Triagerx Model) configuration"
+    echo "Running MF (CNN Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/mf-cnn_transformer.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "mf-fcn" ]; then
-    echo "Running MF (Triagerx Model) configuration"
+    echo "Running MF (FCN Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_deeptriage.py \
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/deeptriage/mf-fcn_transformer.yaml \
         --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_firefox/classifier_data_20.csv \
