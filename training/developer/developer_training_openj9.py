@@ -234,6 +234,6 @@ model_evaluator.evaluate(
     topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
-    combined_loss=False if model_key == "fcn-tranformer" else True,
+    combined_loss=False if model_key == "fcn-transformer" else True,
 )
 logger.info("Finished testing.")
