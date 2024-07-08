@@ -1,3 +1,8 @@
+"""
+Usage:
+python reproduction/train_lbtp.py --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv --embedding_model_weights /work/disa_lab/projects/triagerx/models/distillation/lbtp_gc_base.pt --output_model_weights /work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_gc_block9.pt --block 9
+"""
+
 import argparse
 import sys
 
@@ -15,7 +20,7 @@ from transformers import RobertaConfig, RobertaModel, RobertaTokenizer
 import wandb
 from triagerx.trainer.model_evaluator import ModelEvaluator
 
-parser = argparse.ArgumentParser(description="Script to run TensorFlow model training")
+parser = argparse.ArgumentParser(description="Script to run model training")
 
 # Define arguments
 parser.add_argument(
@@ -43,6 +48,7 @@ dataset_path = args.dataset_path
 embedding_model_weights_dir = args.embedding_model_weights
 block = args.block
 output_model_weights = args.output_model_weights
+test_report_location = "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 
 
 class TriageDataset(Dataset):
@@ -136,6 +142,8 @@ class LBTPClassifier(nn.Module):
             ]
         )
 
+        self.classifier_weights = nn.Parameter(torch.ones(self._num_classifiers))
+
         self.classifiers = nn.ModuleList(
             [
                 nn.Linear(
@@ -164,8 +172,7 @@ class LBTPClassifier(nn.Module):
             ]
             x = torch.cat(x, dim=1)
             x = torch.cat([pooler_out, x], dim=1)
-            # x = self.dropout(x)
-            x = self.classifiers[i](x)
+            x = self.classifier_weights[i] * self.classifiers[i](x)
 
             outputs.append(x)
 
@@ -255,6 +262,8 @@ def clean_data(df):
 
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
+df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
+
 df = df[df["owner"].notna()]
 df = clean_data(df)
 
@@ -306,13 +315,15 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
 learning_rate = 1e-5
-epochs = 40
+epochs = 20
 batch_size = 10
-topk_indices = [3, 5, 10]
+topk_indices = [3, 5, 10, 20]
+
+run_name = f"{args.run_name}_block{block}"
 
 wandb_config = {
-    "project": "lbtp_reproduction",
-    "name": f"{args.run_name}_block{block}",
+    "project": "google_chromium",
+    "name": run_name,
     "config": {
         "learning_rate": learning_rate,
         "dataset": "Deeptriage",
@@ -425,16 +436,17 @@ for epoch_num in range(epochs):
         best_loss = val_loss
 
 
-# print("Starting testing...")
-# model.load_state_dict(torch.load(output_model_weights))
-# model_evaluator = ModelEvaluator()
-# model_evaluator.evaluate(
-#     model=model,
-#     dataloader=val_dataloader,
-#     device=device,
-#     run_name=f"lbtp_mc_block{block}",
-#     topk_index=10,
-#     weights_save_location=output_model_weights,
-#     test_report_location="lbtp_reproduction.json",
-# )
-# print("Finished testing.")
+print("Starting testing...")
+model.load_state_dict(torch.load(output_model_weights))
+
+model_evaluator = ModelEvaluator()
+model_evaluator.evaluate(
+    model=model,
+    dataloader=val_dataloader,
+    device=device,
+    run_name=run_name,
+    topk_indices=topk_indices,
+    weights_save_location=output_model_weights,
+    test_report_location=test_report_location,
+)
+print("Finished testing.")
