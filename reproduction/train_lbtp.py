@@ -281,6 +281,11 @@ print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 X_df = sliced_df[: samples_per_block * block]
 y_df = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
 
+sample_threshold = 20
+developers = X_df["owner"].value_counts()
+filtered_developers = developers.index[developers >= sample_threshold]
+X_df = X_df[X_df["owner"].isin(filtered_developers)]
+
 train_owners = set(X_df["owner"])
 test_owners = set(y_df["owner"])
 
