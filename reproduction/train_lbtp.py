@@ -262,7 +262,7 @@ def clean_data(df):
 
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
-df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
+# df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
 
 df = df[df["owner"].notna()]
 df = clean_data(df)
@@ -278,23 +278,24 @@ sliced_df = df[: samples_per_block * (block + 1)]
 print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 
 # Train and Validation preparation
-X_df = sliced_df[: samples_per_block * block]
-y_df = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
+df_train = sliced_df[: samples_per_block * block]
+df_test = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
 
 sample_threshold = 20
-developers = X_df["owner"].value_counts()
+developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
-X_df = X_df[X_df["owner"].isin(filtered_developers)]
+df_train = df_train[df_train["owner"].isin(filtered_developers)]
 
-train_owners = set(X_df["owner"])
-test_owners = set(y_df["owner"])
+train_owners = set(df_train["owner"])
+test_owners = set(df_test["owner"])
 
 unwanted = list(test_owners - train_owners)
 
-y_df = y_df[~y_df["owner"].isin(unwanted)]
+df_test = df_test[~df_test["owner"].isin(unwanted)]
 
-print(f"Training data: {len(X_df)}, Validation data: {len(y_df)}")
-print(f"Number of developers: {len(X_df.owner.unique())}")
+print(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
+print(f"Number of train developers: {len(df_train.owner.unique())}")
+print(f"Number of test developers: {len(df_train.owner.unique())}")
 
 # Label encode developers
 
@@ -305,8 +306,8 @@ train_owners = sorted(train_owners)
 for idx, dev in enumerate(train_owners):
     lbl2idx[dev] = idx
 
-X_df["owner_id"] = X_df["owner"].apply(lambda owner: lbl2idx[owner])
-y_df["owner_id"] = y_df["owner"].apply(lambda owner: lbl2idx[owner])
+df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
+df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
 
 print("Load pretrained embedding model")
 model_config = RobertaConfig.from_pretrained("roberta-large")
@@ -318,7 +319,7 @@ print("Loaded weights from the saved state.")
 
 tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
-model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
+model = LBTPClassifier(embedding_model, output_size=len(df_train.owner_id.unique()))
 learning_rate = 1e-5
 epochs = 20
 batch_size = 10
@@ -339,10 +340,12 @@ wandb.init(**wandb_config)
 
 criterion = CombineLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-train = TriageDataset(X_df, tokenizer)
-val = TriageDataset(y_df, tokenizer)
-train_dataloader = DataLoader(dataset=train, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(val, batch_size=batch_size)
+train = TriageDataset(df_train, tokenizer)
+val = TriageDataset(df_test, tokenizer)
+train_dataloader = DataLoader(
+    dataset=train, batch_size=batch_size, shuffle=True, drop_last=True
+)
+val_dataloader = DataLoader(val, batch_size=batch_size, drop_last=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 best_loss = float("inf")
 
@@ -428,12 +431,12 @@ for epoch_num in range(epochs):
         precision,
         recall,
         f1_score,
-        X_df,
-        y_df,
+        df_train,
+        df_test,
         accuracy_top_k,
     )
 
-    val_loss = total_loss_val / len(y_df)
+    val_loss = total_loss_val / len(df_train)
 
     if val_loss < best_loss:
         print("Found new best model. Saving weights...")
