@@ -40,15 +40,21 @@ parser.add_argument(
     help="Path for saving the output model weights",
 )
 parser.add_argument("--run_name", type=str, required=True, help="Run name")
+parser.add_argument(
+    "--wandb_project", type=str, required=True, help="wandb_project name"
+)
 
 # Parse arguments
 args = parser.parse_args()
 
+block = args.block
+run_name = f"{args.run_name}_block{block}"
 dataset_path = args.dataset_path
 embedding_model_weights_dir = args.embedding_model_weights
-block = args.block
 output_model_weights = args.output_model_weights
-test_report_location = "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+test_report_location = (
+    f"/home/mdafifal.mamun/notebooks/triagerX/training/reports/{run_name}.json"
+)
 
 
 class TriageDataset(Dataset):
@@ -157,7 +163,10 @@ class LBTPClassifier(nn.Module):
         # Dropout is ommitted as it is not mentioned in the LBTP paper
         # self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input):
+        input_ids = input["input_ids"].squeeze(1).to(device)
+        attention_mask = input["attention_mask"].squeeze(1).to(device)
+
         outputs = []
 
         base_out = self.base_model(input_ids, attention_mask=attention_mask)
@@ -262,7 +271,7 @@ def clean_data(df):
 
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
-# df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
+df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
 
 df = df[df["owner"].notna()]
 df = clean_data(df)
@@ -295,7 +304,7 @@ df_test = df_test[~df_test["owner"].isin(unwanted)]
 
 print(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
 print(f"Number of train developers: {len(df_train.owner.unique())}")
-print(f"Number of test developers: {len(df_train.owner.unique())}")
+print(f"Number of test developers: {len(df_test.owner.unique())}")
 
 # Label encode developers
 
@@ -321,14 +330,12 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(embedding_model, output_size=len(df_train.owner_id.unique()))
 learning_rate = 1e-5
-epochs = 20
+epochs = 40
 batch_size = 10
 topk_indices = [3, 5, 10, 20]
 
-run_name = f"{args.run_name}_block{block}"
-
 wandb_config = {
-    "project": "google_chromium",
+    "project": args.wandb_project,
     "name": run_name,
     "config": {
         "learning_rate": learning_rate,
@@ -356,13 +363,14 @@ for epoch_num in range(epochs):
     total_acc_train = 0
     total_loss_train = 0
 
+    model.train()
     for train_input, train_label in tqdm(train_dataloader, desc="Training Steps"):
         # print(train_input)
         train_label = train_label.to(device)
-        mask = train_input["attention_mask"].squeeze(1).to(device)
-        input_id = train_input["input_ids"].squeeze(1).to(device)
+        # mask = train_input["attention_mask"].squeeze(1).to(device)
+        # input_id = train_input["input_ids"].squeeze(1).to(device)
 
-        output = model(input_id, mask)
+        output = model(train_input)
 
         batch_loss = criterion(output, train_label.long())
         total_loss_train += batch_loss.item()
@@ -383,14 +391,15 @@ for epoch_num in range(epochs):
     all_preds = []
     all_labels = []
 
+    model.eval()
     with torch.no_grad():
 
         for val_input, val_label in tqdm(val_dataloader, desc="Validation Steps"):
             val_label = val_label.to(device)
-            input_id = val_input["input_ids"].squeeze(1).to(device)
-            mask = val_input["attention_mask"].squeeze(1).to(device)
+            # input_id = val_input["input_ids"].squeeze(1).to(device)
+            # mask = val_input["attention_mask"].squeeze(1).to(device)
 
-            output = model(input_id, mask)
+            output = model(val_input)
 
             batch_loss = criterion(output, val_label.long())
             total_loss_val += batch_loss.item()
