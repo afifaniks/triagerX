@@ -9,17 +9,23 @@ from triagerx.model.cnn_transformer import CNNTransformer
 from triagerx.model.fcn_transformer import FCNTransformer
 from triagerx.model.prediction_model import PredictionModel
 from triagerx.model.triagerx_model import TriagerxModel
+from triagerx.model.triagerx_sequential import TriagerxFCNModel
+from triagerx.model.triagerx_pooler import TriagerxFCNPoolerModel
 
 DEFINED_MODELS = {
     "cnn-transformer": CNNTransformer,
     "fcn-transformer": FCNTransformer,
     "triagerx": TriagerxModel,
+    "triagerx-fcn": TriagerxFCNModel,
+    "triagerx-fcn-pooler": TriagerxFCNPoolerModel
 }
 
 DEFINED_DATASETS = {
     CNNTransformer.__name__: TriageDataset,
     FCNTransformer.__name__: TriageDataset,
     TriagerxModel.__name__: EnsembleDataset,
+    TriagerxFCNModel.__name__: EnsembleDataset,
+    TriagerxFCNPoolerModel.__name__: EnsembleDataset
 }
 
 
@@ -68,7 +74,8 @@ class ModelFactory:
         else:
             logger.debug("Ignoring number of filters and classifiers for FCN")
 
-        if model_key == "triagerx":
+        if "triagerx" in model_key:
+            model_params["num_classifiers"] = num_classifiers
             model_params["base_models"] = base_models
         else:
             model_params["base_model"] = base_models[0]
