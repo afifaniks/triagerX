@@ -22,6 +22,7 @@ class WeightedLayerPooling(nn.Module):
         )
 
     def forward(self, all_hidden_states):
+        all_hidden_states = torch.stack(all_hidden_states)
         all_layer_embedding = all_hidden_states[self.layer_start :, :, :, :]
         weight_factor = (
             self.layer_weights.unsqueeze(-1)
@@ -88,10 +89,10 @@ class TriagerxFCNPoolerModel(PredictionModel):
             [
                 WeightedLayerPooling(
                     base_model.config.num_hidden_layers,
-                    layer_start=6,
+                    layer_start=8,
                     layer_weights=None,
                 )
-                for base_model in base_models
+                for base_model in self.base_models
             ]
         )
 
@@ -131,25 +132,19 @@ class TriagerxFCNPoolerModel(PredictionModel):
                 input_ids=inputs[idx]["input_ids"],
                 attention_mask=inputs[idx]["attention_mask"],
             )
-            hidden_states.append(base_out.hidden_states[-self._num_classifiers :])
+            hidden_states.append(base_out.hidden_states)
 
-        outputs = []
+        # Apply learnable weights to hidden states from each base model
+        pooled_hidden_states = [
+            self._poolers[idx](hidden_states[idx])
+            for idx in range(len(self.base_models))
+        ]
+        concatenated_hidden_states = torch.cat(pooled_hidden_states, dim=-1)
+        x = concatenated_hidden_states
+        x = torch.mean(concatenated_hidden_states, dim=1)
+        output = self.classifier(x)
 
-        # Concatenate hidden states and apply classifiers
-        for i in range(self._num_classifiers):
-            # Apply learnable weights to hidden states from each base model
-            pooled_hidden_states = [
-                self._poolers(hidden_states[idx])
-                for idx in range(len(self.base_models))
-            ]
-            concatenated_hidden_states = torch.cat(pooled_hidden_states, dim=-1)
-            x = concatenated_hidden_states
-            x = torch.mean(concatenated_hidden_states, dim=1)
-            x = self.classifiers[i](x)
-
-            outputs.append(x)
-
-        return outputs
+        return output
 
     def tokenizer(self, model_idx) -> PreTrainedTokenizer:
         # Return the tokenizer for the specified base model index
