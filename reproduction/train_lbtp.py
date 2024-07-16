@@ -328,8 +328,10 @@ print("Loaded weights from the saved state.")
 
 tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
-model = LBTPClassifier(embedding_model, output_size=len(df_train.owner_id.unique()))
-learning_rate = 1e-5
+model = LBTPClassifier(
+    embedding_model, output_size=len(df_train.owner_id.unique()), unfrozen_layers=3
+)
+learning_rate = 0.00001
 epochs = 40
 batch_size = 10
 topk_indices = [3, 5, 10, 20]
