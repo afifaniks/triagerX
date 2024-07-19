@@ -1,0 +1,195 @@
+{
+  "0": {
+    "precision": 0.2828282828282828,
+    "recall": 0.3146067415730337,
+    "f1-score": 0.2978723404255319,
+    "support": 89.0
+  },
+  "1": {
+    "precision": 0.30456852791878175,
+    "recall": 0.5882352941176471,
+    "f1-score": 0.4013377926421405,
+    "support": 102.0
+  },
+  "3": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "4": {
+    "precision": 0.5862068965517241,
+    "recall": 0.08173076923076923,
+    "f1-score": 0.14345991561181434,
+    "support": 208.0
+  },
+  "5": {
+    "precision": 0.2185430463576159,
+    "recall": 0.32038834951456313,
+    "f1-score": 0.25984251968503935,
+    "support": 103.0
+  },
+  "7": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 4.0
+  },
+  "10": {
+    "precision": 0.125,
+    "recall": 0.3157894736842105,
+    "f1-score": 0.1791044776119403,
+    "support": 19.0
+  },
+  "11": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 24.0
+  },
+  "13": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 33.0
+  },
+  "14": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 5.0
+  },
+  "15": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 26.0
+  },
+  "16": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "17": {
+    "precision": 0.2727272727272727,
+    "recall": 0.033707865168539325,
+    "f1-score": 0.06,
+    "support": 89.0
+  },
+  "18": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "19": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 13.0
+  },
+  "23": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "25": {
+    "precision": 0.14285714285714285,
+    "recall": 0.05,
+    "f1-score": 0.07407407407407408,
+    "support": 20.0
+  },
+  "26": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 34.0
+  },
+  "28": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "29": {
+    "precision": 0.32083333333333336,
+    "recall": 0.6936936936936937,
+    "f1-score": 0.43874643874643876,
+    "support": 111.0
+  },
+  "30": {
+    "precision": 0.045454545454545456,
+    "recall": 0.07692307692307693,
+    "f1-score": 0.05714285714285715,
+    "support": 13.0
+  },
+  "31": {
+    "precision": 0.29333333333333333,
+    "recall": 0.4489795918367347,
+    "f1-score": 0.3548387096774194,
+    "support": 49.0
+  },
+  "32": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "33": {
+    "precision": 0.4166666666666667,
+    "recall": 0.42857142857142855,
+    "f1-score": 0.4225352112676056,
+    "support": 70.0
+  },
+  "35": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "36": {
+    "precision": 0.25396825396825395,
+    "recall": 0.4050632911392405,
+    "f1-score": 0.3121951219512195,
+    "support": 79.0
+  },
+  "37": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "38": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "39": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 16.0
+  },
+  "accuracy": 0.27927927927927926,
+  "macro avg": {
+    "precision": 0.11251680351713632,
+    "recall": 0.12957550260182543,
+    "f1-score": 0.10348791237365795,
+    "support": 1110.0
+  },
+  "weighted avg": {
+    "precision": 0.2972886905957633,
+    "recall": 0.27927927927927926,
+    "f1-score": 0.2300420628099816,
+    "support": 1110.0
+  },
+  "top3_acc": 0.5031277926720286,
+  "top5_acc": 0.6273458445040214,
+  "top10_acc": 0.7819481680071493,
+  "top20_acc": 0.9088471849865952,
+  "run_name": "lbpt_ts_block9",
+  "model_location": "/work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_ts_block9.pt"
+}

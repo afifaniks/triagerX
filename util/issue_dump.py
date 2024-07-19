@@ -109,6 +109,12 @@ def dump_issues(owner, repo, gh_token, path):
         filtered_issues = filter_pull_requests(issues)
 
         for issue in filtered_issues:
+            destination = os.path.join(path, str(issue["number"]) + ".json")
+
+            if os.path.exists(destination):
+                print(f"Issue: {issue['number']} already downloaded! Skipping...")
+                continue
+
             print(f"Extracting issue data: {issue['number']}")
             issue["timeline_data"] = get_field_data(issue["timeline_url"], headers)
             issue["comments_data"] = get_field_data(issue["comments_url"], headers)
@@ -128,6 +134,8 @@ parser.add_argument("--owner", type=str, required=True, help="Github repo owner"
 parser.add_argument("--repo", type=str, required=True, help="Github repo")
 
 args = parser.parse_args()
+
+os.makedirs(args.path, exist_ok=True)
 
 print(f"Dumping data for: {args.owner}/{args.repo}")
 dump_issues(args.owner, args.repo, gh_token, args.path)

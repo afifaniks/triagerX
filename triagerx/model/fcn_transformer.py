@@ -1,6 +1,11 @@
 import torch
+from loguru import logger
 from torch import nn
-from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    PreTrainedTokenizer,
+)
 
 from triagerx.model.prediction_model import PredictionModel
 
@@ -16,27 +21,28 @@ class FCNTransformer(PredictionModel):
         label_map=None,
     ) -> None:
         super(FCNTransformer, self).__init__()
-        self.base_model = AutoModel.from_pretrained(
-            base_model, output_hidden_states=True
+        self.base_model = AutoModelForSequenceClassification.from_pretrained(
+            base_model, num_labels=output_size
         )
         self._tokenizer = AutoTokenizer.from_pretrained(base_model)
         self._label_map = label_map
 
-        # Freeze embedding layers
-        for p in self.base_model.embeddings.parameters():
-            p.requires_grad = False
-
-        # Freeze encoder layers till last {unfrozen_layers} layers
-        for i in range(0, self.base_model.config.num_hidden_layers - unfrozen_layers):
-            for p in self.base_model.encoder.layer[i].parameters():
+        if unfrozen_layers == -1:
+            logger.debug("Initiating full training...")
+        else:
+            logger.debug(
+                f"Freezing {self.base_model.config.num_hidden_layers - unfrozen_layers} layers"
+            )
+            # Freeze embedding layers
+            for p in self.base_model.embeddings.parameters():
                 p.requires_grad = False
 
-        self._max_tokens = max_tokens
-        self._embed_size = self.base_model.config.hidden_size
-        self.unfrozen_layers = unfrozen_layers
-
-        self.dropout = nn.Dropout(dropout)
-        self.classifier = nn.Linear(self._embed_size * self._max_tokens, output_size)
+            # Freeze encoder layers till last {unfrozen_layers} layers
+            for i in range(
+                0, self.base_model.config.num_hidden_layers - unfrozen_layers
+            ):
+                for p in self.base_model.encoder.layer[i].parameters():
+                    p.requires_grad = False
 
     def forward(self, inputs):
         inputs = {
@@ -45,14 +51,8 @@ class FCNTransformer(PredictionModel):
         }
 
         base_out = self.base_model(**inputs)
-        hidden_state = base_out.hidden_states[-1]
 
-        batch_size, sequence_length, hidden_size = hidden_state.size()
-        x = hidden_state.view(batch_size, -1)
-        x = self.dropout(x)
-        x = self.classifier(x)
-
-        return x
+        return base_out.logits
 
     def tokenizer(self) -> PreTrainedTokenizer:
         return self._tokenizer

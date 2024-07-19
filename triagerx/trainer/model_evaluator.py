@@ -20,6 +20,7 @@ class ModelEvaluator:
         topk_indices: List[int],
         weights_save_location: str,
         test_report_location: str,
+        combined_loss: bool = True,
     ):
         model = model.to(device)
         model.eval()
@@ -31,7 +32,9 @@ class ModelEvaluator:
             for test_input, test_label in tqdm(dataloader, desc="Test Steps"):
                 test_label = test_label.to(device)
                 output = model(test_input)
-                output = torch.sum(torch.stack(output), 0)
+
+                if combined_loss:
+                    output = torch.sum(torch.stack(output), 0)
 
                 _, top_k_predictions = output.topk(max(topk_indices), 1, True, True)
                 top_k_predictions = top_k_predictions.t()

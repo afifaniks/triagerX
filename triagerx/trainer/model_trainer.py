@@ -4,6 +4,7 @@ from loguru import logger
 from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 
+from triagerx.loss.loss_functions import CombinedLoss
 from triagerx.trainer.train_config import TrainConfig
 from triagerx.utils.early_stopping import EarlyStopping
 
@@ -87,7 +88,9 @@ class ModelTrainer:
             batch_loss = criterion(output, train_label.long())
             total_loss_train += batch_loss.item()
 
-            output = torch.sum(torch.stack(output), 0)
+            if isinstance(criterion, CombinedLoss):
+                output = torch.sum(torch.stack(output), 0)
+
             acc = (output.argmax(dim=1) == train_label).sum().item()
             total_acc_train += acc
 
@@ -119,7 +122,9 @@ class ModelTrainer:
                 batch_loss = criterion(output, val_label.long())
                 total_loss_val += batch_loss.item()
 
-                output = torch.sum(torch.stack(output), 0)
+                if isinstance(criterion, CombinedLoss):
+                    output = torch.sum(torch.stack(output), 0)
+
                 # Max topk index will have the other k as well
                 _, top_k_predictions = output.topk(max(topk_indices), 1, True, True)
                 top_k_predictions = top_k_predictions.t()

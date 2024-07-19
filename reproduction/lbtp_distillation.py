@@ -1,6 +1,6 @@
 """
 Script to distill roberta-large following LBT-P
-Usage: 
+Usage:
 ```
 python reproduction/lbtp_distillation.py --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_core/deep_data.csv --model_weights_path /work/disa_lab/projects/triagerx/models/distillation/lbtp_mc_base.pt
 ```
@@ -48,6 +48,8 @@ model_weights_dir = args.model_weights_path
 
 df = pd.read_csv(open_data)
 print(len(df))
+
+df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
 
 
 def clean_distill_data(df):

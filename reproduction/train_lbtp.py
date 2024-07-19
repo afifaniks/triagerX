@@ -1,3 +1,8 @@
+"""
+Usage:
+python reproduction/train_lbtp.py --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv --embedding_model_weights /work/disa_lab/projects/triagerx/models/distillation/lbtp_gc_base.pt --output_model_weights /work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_gc_block9.pt --block 9
+"""
+
 import argparse
 import sys
 
@@ -15,7 +20,7 @@ from transformers import RobertaConfig, RobertaModel, RobertaTokenizer
 import wandb
 from triagerx.trainer.model_evaluator import ModelEvaluator
 
-parser = argparse.ArgumentParser(description="Script to run TensorFlow model training")
+parser = argparse.ArgumentParser(description="Script to run model training")
 
 # Define arguments
 parser.add_argument(
@@ -35,14 +40,21 @@ parser.add_argument(
     help="Path for saving the output model weights",
 )
 parser.add_argument("--run_name", type=str, required=True, help="Run name")
+parser.add_argument(
+    "--wandb_project", type=str, required=True, help="wandb_project name"
+)
 
 # Parse arguments
 args = parser.parse_args()
 
+block = args.block
+run_name = f"{args.run_name}_block{block}"
 dataset_path = args.dataset_path
 embedding_model_weights_dir = args.embedding_model_weights
-block = args.block
 output_model_weights = args.output_model_weights
+test_report_location = (
+    f"/home/mdafifal.mamun/notebooks/triagerX/training/reports/{run_name}.json"
+)
 
 
 class TriageDataset(Dataset):
@@ -136,6 +148,8 @@ class LBTPClassifier(nn.Module):
             ]
         )
 
+        self.classifier_weights = nn.Parameter(torch.ones(self._num_classifiers))
+
         self.classifiers = nn.ModuleList(
             [
                 nn.Linear(
@@ -149,7 +163,10 @@ class LBTPClassifier(nn.Module):
         # Dropout is ommitted as it is not mentioned in the LBTP paper
         # self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input):
+        input_ids = input["input_ids"].squeeze(1).to(device)
+        attention_mask = input["attention_mask"].squeeze(1).to(device)
+
         outputs = []
 
         base_out = self.base_model(input_ids, attention_mask=attention_mask)
@@ -164,8 +181,7 @@ class LBTPClassifier(nn.Module):
             ]
             x = torch.cat(x, dim=1)
             x = torch.cat([pooler_out, x], dim=1)
-            # x = self.dropout(x)
-            x = self.classifiers[i](x)
+            x = self.classifier_weights[i] * self.classifiers[i](x)
 
             outputs.append(x)
 
@@ -255,6 +271,8 @@ def clean_data(df):
 
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
+df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
+
 df = df[df["owner"].notna()]
 df = clean_data(df)
 
@@ -269,18 +287,24 @@ sliced_df = df[: samples_per_block * (block + 1)]
 print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 
 # Train and Validation preparation
-X_df = sliced_df[: samples_per_block * block]
-y_df = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
+df_train = sliced_df[: samples_per_block * block]
+df_test = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
 
-train_owners = set(X_df["owner"])
-test_owners = set(y_df["owner"])
+sample_threshold = 20
+developers = df_train["owner"].value_counts()
+filtered_developers = developers.index[developers >= sample_threshold]
+df_train = df_train[df_train["owner"].isin(filtered_developers)]
+
+train_owners = set(df_train["owner"])
+test_owners = set(df_test["owner"])
 
 unwanted = list(test_owners - train_owners)
 
-y_df = y_df[~y_df["owner"].isin(unwanted)]
+df_test = df_test[~df_test["owner"].isin(unwanted)]
 
-print(f"Training data: {len(X_df)}, Validation data: {len(y_df)}")
-print(f"Number of developers: {len(X_df.owner.unique())}")
+print(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
+print(f"Number of train developers: {len(df_train.owner.unique())}")
+print(f"Number of test developers: {len(df_test.owner.unique())}")
 
 # Label encode developers
 
@@ -291,8 +315,8 @@ train_owners = sorted(train_owners)
 for idx, dev in enumerate(train_owners):
     lbl2idx[dev] = idx
 
-X_df["owner_id"] = X_df["owner"].apply(lambda owner: lbl2idx[owner])
-y_df["owner_id"] = y_df["owner"].apply(lambda owner: lbl2idx[owner])
+df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
+df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
 
 print("Load pretrained embedding model")
 model_config = RobertaConfig.from_pretrained("roberta-large")
@@ -304,15 +328,17 @@ print("Loaded weights from the saved state.")
 
 tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
-model = LBTPClassifier(embedding_model, output_size=len(X_df.owner_id.unique()))
-learning_rate = 1e-5
+model = LBTPClassifier(
+    embedding_model, output_size=len(df_train.owner_id.unique()), unfrozen_layers=3
+)
+learning_rate = 0.00001
 epochs = 40
 batch_size = 10
-topk_indices = [3, 5, 10]
+topk_indices = [3, 5, 10, 20]
 
 wandb_config = {
-    "project": "lbtp_reproduction",
-    "name": f"{args.run_name}_block{block}",
+    "project": args.wandb_project,
+    "name": run_name,
     "config": {
         "learning_rate": learning_rate,
         "dataset": "Deeptriage",
@@ -323,10 +349,12 @@ wandb.init(**wandb_config)
 
 criterion = CombineLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-train = TriageDataset(X_df, tokenizer)
-val = TriageDataset(y_df, tokenizer)
-train_dataloader = DataLoader(dataset=train, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(val, batch_size=batch_size)
+train = TriageDataset(df_train, tokenizer)
+val = TriageDataset(df_test, tokenizer)
+train_dataloader = DataLoader(
+    dataset=train, batch_size=batch_size, shuffle=True, drop_last=True
+)
+val_dataloader = DataLoader(val, batch_size=batch_size, drop_last=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 best_loss = float("inf")
 
@@ -337,13 +365,14 @@ for epoch_num in range(epochs):
     total_acc_train = 0
     total_loss_train = 0
 
+    model.train()
     for train_input, train_label in tqdm(train_dataloader, desc="Training Steps"):
         # print(train_input)
         train_label = train_label.to(device)
-        mask = train_input["attention_mask"].squeeze(1).to(device)
-        input_id = train_input["input_ids"].squeeze(1).to(device)
+        # mask = train_input["attention_mask"].squeeze(1).to(device)
+        # input_id = train_input["input_ids"].squeeze(1).to(device)
 
-        output = model(input_id, mask)
+        output = model(train_input)
 
         batch_loss = criterion(output, train_label.long())
         total_loss_train += batch_loss.item()
@@ -364,14 +393,15 @@ for epoch_num in range(epochs):
     all_preds = []
     all_labels = []
 
+    model.eval()
     with torch.no_grad():
 
         for val_input, val_label in tqdm(val_dataloader, desc="Validation Steps"):
             val_label = val_label.to(device)
-            input_id = val_input["input_ids"].squeeze(1).to(device)
-            mask = val_input["attention_mask"].squeeze(1).to(device)
+            # input_id = val_input["input_ids"].squeeze(1).to(device)
+            # mask = val_input["attention_mask"].squeeze(1).to(device)
 
-            output = model(input_id, mask)
+            output = model(val_input)
 
             batch_loss = criterion(output, val_label.long())
             total_loss_val += batch_loss.item()
@@ -412,12 +442,12 @@ for epoch_num in range(epochs):
         precision,
         recall,
         f1_score,
-        X_df,
-        y_df,
+        df_train,
+        df_test,
         accuracy_top_k,
     )
 
-    val_loss = total_loss_val / len(y_df)
+    val_loss = total_loss_val / len(df_train)
 
     if val_loss < best_loss:
         print("Found new best model. Saving weights...")
@@ -425,16 +455,17 @@ for epoch_num in range(epochs):
         best_loss = val_loss
 
 
-# print("Starting testing...")
-# model.load_state_dict(torch.load(output_model_weights))
-# model_evaluator = ModelEvaluator()
-# model_evaluator.evaluate(
-#     model=model,
-#     dataloader=val_dataloader,
-#     device=device,
-#     run_name=f"lbtp_mc_block{block}",
-#     topk_index=10,
-#     weights_save_location=output_model_weights,
-#     test_report_location="lbtp_reproduction.json",
-# )
-# print("Finished testing.")
+print("Starting testing...")
+model.load_state_dict(torch.load(output_model_weights))
+
+model_evaluator = ModelEvaluator()
+model_evaluator.evaluate(
+    model=model,
+    dataloader=val_dataloader,
+    device=device,
+    run_name=run_name,
+    topk_indices=topk_indices,
+    weights_save_location=output_model_weights,
+    test_report_location=test_report_location,
+)
+print("Finished testing.")

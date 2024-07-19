@@ -8,6 +8,7 @@ import torch
 import yaml
 from loguru import logger
 from sklearn.model_selection import train_test_split
+from torch.nn import CrossEntropyLoss
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -107,42 +108,6 @@ df = df[df["owner"].notna()]
 num_issues = len(df)
 logger.info(f"Total number of issues after processing: {num_issues}")
 
-# Define active user map
-vm_users = [
-    "pshipton",
-    "keithc-ca",
-    "gacholio",
-    "tajila",
-    "babsingh",
-    "JasonFengJ9",
-    "fengxue-IS",
-    "hangshao0",
-    "theresa.t.mammarella",
-    "ChengJin01",
-    "singh264",
-    "thallium",
-    "ThanHenderson",
-]
-jvmti_users = ["gacholio", "tajila", "babsingh", "fengxue-IS"]
-jclextensions_users = ["JasonFengJ9", "pshipton", "keithc-ca"]
-test_users = ["LongyuZhang", "annaibm", "sophiaxu0424", "KapilPowar", "llxia"]
-build_users = ["adambrousseau", "mahdipub"]
-gc_users = ["dmitripivkine", "amicic", "kangyining", "LinHu2016"]
-
-# Putting them in dictionaries
-components = {
-    "comp:vm": vm_users,
-    "comp:jvmti": jvmti_users,
-    "comp:jclextensions": jclextensions_users,
-    "comp:test": test_users,
-    "comp:build": build_users,
-    "comp:gc": gc_users,
-}
-
-# expected_users = [user for user_list in components.values() for user in user_list]
-# df = df[df["owner"].isin(expected_users)]
-logger.info(f"Total issues after developer filtering: {len(df)}")
-
 df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
@@ -202,7 +167,8 @@ model = ModelFactory.get_model(
     label_map=idx2lbl,
 )
 
-criterion = CombinedLoss()
+criterion = CrossEntropyLoss() if model_key == "fcn-transformer" else CombinedLoss()
+logger.debug(f"Selected loss function: {criterion}")
 
 optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8, weight_decay=0.001)
 
@@ -268,5 +234,6 @@ model_evaluator.evaluate(
     topk_indices=topk_indices,
     weights_save_location=weights_save_location,
     test_report_location=test_report_location,
+    combined_loss=False if model_key == "fcn-transformer" else True,
 )
 logger.info("Finished testing.")
