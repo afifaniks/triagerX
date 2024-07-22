@@ -12,9 +12,9 @@
     "support": 1.0
   },
   "2": {
-    "precision": 0.25,
-    "recall": 0.05555555555555555,
-    "f1-score": 0.0909090909090909,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
     "support": 18.0
   },
   "4": {
@@ -42,27 +42,27 @@
     "support": 1.0
   },
   "8": {
-    "precision": 0.4523809523809524,
-    "recall": 0.3220338983050847,
-    "f1-score": 0.37623762376237624,
+    "precision": 0.5,
+    "recall": 0.4406779661016949,
+    "f1-score": 0.4684684684684685,
     "support": 59.0
   },
   "9": {
-    "precision": 0.04,
-    "recall": 0.1111111111111111,
-    "f1-score": 0.058823529411764705,
+    "precision": 0.06896551724137931,
+    "recall": 0.2222222222222222,
+    "f1-score": 0.10526315789473684,
     "support": 9.0
   },
   "10": {
-    "precision": 0.6,
+    "precision": 0.5294117647058824,
     "recall": 0.75,
-    "f1-score": 0.6666666666666665,
+    "f1-score": 0.6206896551724139,
     "support": 12.0
   },
   "11": {
-    "precision": 0.8,
-    "recall": 0.36363636363636365,
-    "f1-score": 0.5000000000000001,
+    "precision": 0.5,
+    "recall": 0.09090909090909091,
+    "f1-score": 0.15384615384615385,
     "support": 11.0
   },
   "12": {
@@ -78,9 +78,9 @@
     "support": 0.0
   },
   "14": {
-    "precision": 1.0,
+    "precision": 0.2,
     "recall": 0.25,
-    "f1-score": 0.4,
+    "f1-score": 0.22222222222222224,
     "support": 4.0
   },
   "15": {
@@ -89,10 +89,16 @@
     "f1-score": 0.0,
     "support": 0.0
   },
+  "16": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
   "17": {
-    "precision": 0.2,
-    "recall": 0.16666666666666666,
-    "f1-score": 0.1818181818181818,
+    "precision": 0.1875,
+    "recall": 0.25,
+    "f1-score": 0.21428571428571427,
     "support": 12.0
   },
   "18": {
@@ -102,9 +108,9 @@
     "support": 0.0
   },
   "19": {
-    "precision": 0.15789473684210525,
-    "recall": 0.17647058823529413,
-    "f1-score": 0.16666666666666669,
+    "precision": 0.08333333333333333,
+    "recall": 0.058823529411764705,
+    "f1-score": 0.06896551724137931,
     "support": 17.0
   },
   "20": {
@@ -114,9 +120,9 @@
     "support": 0.0
   },
   "21": {
-    "precision": 0.125,
-    "recall": 0.4,
-    "f1-score": 0.19047619047619047,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
     "support": 5.0
   },
   "22": {
@@ -126,9 +132,9 @@
     "support": 2.0
   },
   "23": {
-    "precision": 0.16666666666666666,
-    "recall": 0.25,
-    "f1-score": 0.2,
+    "precision": 0.2,
+    "recall": 0.5,
+    "f1-score": 0.28571428571428575,
     "support": 4.0
   },
   "24": {
@@ -138,15 +144,21 @@
     "support": 0.0
   },
   "25": {
-    "precision": 0.125,
-    "recall": 0.1111111111111111,
-    "f1-score": 0.11764705882352941,
+    "precision": 0.3,
+    "recall": 0.16666666666666666,
+    "f1-score": 0.21428571428571427,
     "support": 18.0
   },
+  "26": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
   "27": {
-    "precision": 0.2222222222222222,
-    "recall": 0.038461538461538464,
-    "f1-score": 0.0655737704918033,
+    "precision": 0.3076923076923077,
+    "recall": 0.07692307692307693,
+    "f1-score": 0.12307692307692308,
     "support": 52.0
   },
   "28": {
@@ -156,21 +168,21 @@
     "support": 0.0
   },
   "29": {
-    "precision": 0.0,
-    "recall": 0.0,
-    "f1-score": 0.0,
+    "precision": 0.2,
+    "recall": 0.125,
+    "f1-score": 0.15384615384615385,
     "support": 8.0
   },
   "30": {
-    "precision": 0.37037037037037035,
-    "recall": 0.2564102564102564,
-    "f1-score": 0.30303030303030304,
+    "precision": 0.3888888888888889,
+    "recall": 0.1794871794871795,
+    "f1-score": 0.24561403508771928,
     "support": 39.0
   },
   "31": {
-    "precision": 0.17857142857142858,
-    "recall": 0.4166666666666667,
-    "f1-score": 0.25,
+    "precision": 0.35294117647058826,
+    "recall": 0.5,
+    "f1-score": 0.41379310344827586,
     "support": 12.0
   },
   "32": {
@@ -179,22 +191,16 @@
     "f1-score": 0.0,
     "support": 5.0
   },
-  "33": {
+  "34": {
     "precision": 0.0,
     "recall": 0.0,
     "f1-score": 0.0,
-    "support": 0.0
-  },
-  "34": {
-    "precision": 0.5,
-    "recall": 0.07142857142857142,
-    "f1-score": 0.125,
     "support": 14.0
   },
   "35": {
-    "precision": 0.043478260869565216,
+    "precision": 0.037037037037037035,
     "recall": 0.5,
-    "f1-score": 0.08,
+    "f1-score": 0.06896551724137931,
     "support": 2.0
   },
   "36": {
@@ -210,15 +216,15 @@
     "support": 0.0
   },
   "38": {
-    "precision": 0.3333333333333333,
+    "precision": 0.1,
     "recall": 0.2,
-    "f1-score": 0.25,
+    "f1-score": 0.13333333333333333,
     "support": 5.0
   },
   "39": {
-    "precision": 0.1,
-    "recall": 0.1111111111111111,
-    "f1-score": 0.10526315789473685,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
     "support": 9.0
   },
   "40": {
@@ -228,9 +234,9 @@
     "support": 0.0
   },
   "41": {
-    "precision": 0.25,
-    "recall": 0.03571428571428571,
-    "f1-score": 0.0625,
+    "precision": 0.4,
+    "recall": 0.14285714285714285,
+    "f1-score": 0.21052631578947364,
     "support": 28.0
   },
   "42": {
@@ -281,23 +287,23 @@
     "f1-score": 0.0,
     "support": 1.0
   },
-  "accuracy": 0.17539267015706805,
+  "accuracy": 0.18848167539267016,
   "macro avg": {
-    "precision": 0.1258493185373754,
-    "recall": 0.0975825047747578,
-    "f1-score": 0.08916196255215554,
+    "precision": 0.09074520886186284,
+    "recall": 0.09278264322039247,
+    "f1-score": 0.07714367231154891,
     "support": 382.0
   },
   "weighted avg": {
-    "precision": 0.2747979940175958,
-    "recall": 0.17539267015706805,
-    "f1-score": 0.1896187461628637,
+    "precision": 0.26548778103847503,
+    "recall": 0.18848167539267016,
+    "f1-score": 0.1995677781474192,
     "support": 382.0
   },
-  "top3_acc": 0.3481675392670157,
-  "top5_acc": 0.4790575916230366,
-  "top10_acc": 0.7015706806282722,
-  "top20_acc": 0.8507853403141361,
-  "run_name": "cnn_roberta-base_u3_50_classes_last_dev_seed42",
-  "model_location": "/work/disa_lab/projects/triagerx/models/openj9/cnn_roberta-base_u3_50_classes_last_dev_seed42.pt"
+  "top3_acc": 0.3717277486910995,
+  "top5_acc": 0.5,
+  "top10_acc": 0.680628272251309,
+  "top20_acc": 0.8717277486910995,
+  "run_name": "cnn_deberta-base_u3_50_classes_last_dev_seed42",
+  "model_location": "/work/disa_lab/projects/triagerx/models/openj9/cnn_deberta-base_u3_50_classes_last_dev_seed42.pt"
 }
