@@ -1,8 +1,8 @@
 """
 Script to distill roberta-large following LBT-P
-Usage:
+Example Usage:
 ```
-python reproduction/lbtp_distillation.py --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/mozilla_core/deep_data.csv --model_weights_path /work/disa_lab/projects/triagerx/models/distillation/lbtp_mc_base.pt
+python reproduction/lbtp/lbtp_distillation.py --dataset_path data/deeptriage/mozilla_core/deep_data.csv --model_weights_path models/distillation/lbtp_mc_base.pt
 ```
 """
 

@@ -1,6 +1,6 @@
 """
-Usage:
-python reproduction/train_lbtp.py --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/deeptriage/google_chrome/classifier_data_20.csv --embedding_model_weights /work/disa_lab/projects/triagerx/models/distillation/lbtp_gc_base.pt --output_model_weights /work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_gc_block9.pt --block 9
+Example Usage:
+python reproduction/lbtp/train_lbtp.py --dataset_path data/deeptriage/google_chrome/classifier_data_20.csv --embedding_model_weights models/distillation/lbtp_gc_base.pt --output_model_weights models/lbtp_dt_gc/lbtp_gc_block9.pt --block 9
 """
 
 import argparse
