@@ -3,7 +3,7 @@
 #SBATCH -t 1-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=50G
-#SBATCH --partition=gpu-a100 --gres=gpu:1
+#SBATCH --partition=gpu-v100 --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/dt_%j.out
 
 # Check if the first parameter is "gc" or "mc"

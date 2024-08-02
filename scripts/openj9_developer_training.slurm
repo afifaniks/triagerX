@@ -3,7 +3,7 @@
 #SBATCH -t 1-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=50G
-#SBATCH --partition=gpu-a100 --gres=gpu:1
+#SBATCH --partition=gpu-v100 --gres=gpu:1
 #SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/openj9_%j.out
 
 CONFIG_PARAM=$1
@@ -37,3 +37,9 @@ elif [ "$CONFIG_PARAM" == "fcn" ]; then
 else
     echo "Invalid parameter. Use 'triagerx' for Openj9 (Triagerx) configuration or 'cnn' for Openj9 (CNN-Transformer) configuration."
 fi
+
+
+python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_torch.py \
+--config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/torch/triagerx.yaml \
+--dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/pytorch_last.csv \
+--seed 42
