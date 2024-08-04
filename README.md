@@ -174,7 +174,7 @@ TriagerX framework provides fast & clean deployment through FastAPI. To make the
 4. Set configurations for the app in [`app/config/triagerx_config.yaml`](app/config/triagerx_config.yaml) file. It is self explanatory.
 5. Once the configuration is set, run the API by following command:
     ```shell
-    uvicorn main:app --host 0.0.0.0 --port 8080
+    uvicorn main:app --host 0.0.0.0 --port 8000
    ```
 6. The first boot may take some time to initialize a few things. When the app startup is complete, the API can be used by:
     ```bash
@@ -202,13 +202,6 @@ The framework along with the recommendation API can also be dockarized and run i
 
 ```shell
 docker build -t triagerx .
-```
-
-### Load Docker Image
-To build the Docker image for Triager X, run the following command:
-
-```shell
-docker load -i triagerx.tar
 ```
 
 ### Run Docker Container
