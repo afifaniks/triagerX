@@ -14,7 +14,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
 
-sys.path.append("/home/mdafifal.mamun/notebooks/triagerX")
+sys.path.append("../triagerX")
 
 from triagerx.dataset.text_processor import TextProcessor
 from triagerx.loss.loss_functions import *
