@@ -23,7 +23,7 @@ conda activate myenv
 Download the bug datasets compressed in this zip file: [**data.zip - Google Drive**](https://drive.google.com/file/d/1UUcPWk0nO31xlTyZnhy88hJ7yq3MmkZ-/view?usp=drive_link)
 
 Once the compressed zip is downloaded, extract it to a suitable directory. The directory structure should be something similar to this:
-```
+```bash
 data/
 ├── deeptriage/
 │   ├── google_chrome/
@@ -111,6 +111,44 @@ python training/developer/developer_training_openj9.py \
 ```
 _In our experimental setup, we used SLURM to train the models. Those scripts can be found under `scripts` directory._
 
+## TriagerX Recommendation Generation
+Once the required CBR model is trained, recommendations can be generated using [`TriagerX`](triagerx/system/triagerx.py) pipeline.
+
+To import the pipeline:
+```python
+from triagerx.system.triagerx import TriagerX
+
+# Initialize the pipeline
+triagerx_pipeline = TriagerX(
+    developer_prediction_model=TRAINED_DEV_MODEL,
+    similarity_model=PRETRAINED_SENTENCE_TRANSFORMER_MODEL,
+    issues_path=PATH_TO_STORED_JSON_DATA_OF_GITHUB_ISSUES,
+    train_embeddings=PATH_TO_SAVED_TRAIN_DATA_EMBEDDINGS,
+    developer_id_map=DEVELOPER_ID_MAP,
+    expected_developers=ACTIVE_DEVELOPERS_LIST,
+    train_data=TRAIN_DATAFRAME,
+    device="cuda",
+    similarity_prediction_weight=WEIGHT_FOR_SIMILARITY_PREDICTION,
+    time_decay_factor=OPTIMIZED_TIME_DECAY_FACTOR,
+    direct_assignment_score=CONTRIBUTION_POINT_FOR_DIRECT_ASSIGNMENT,
+    contribution_score=CONTRIBUTION_POINT_FOR_COMMITS_PR,
+    discussion_score=CONTRIBUTION_POINT_FOR_DISCUSSION,
+)
+
+# Get Recommendation
+triagerx_pipeline.get_recommendation(
+        "Bug Title\nBug Description",
+        k_dev=TOP_K_DEVELOPERS,
+        k_rank=MAXIMUM_SIMILAR_ISSUES_TO_BE_CONSIDERED,
+        similarity_threshold=THRESHOLD_FOR_ISSUE_SIMILARITY,
+    )
+```
+This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script.
+
+## Optimizing Hyperparameters for IBR
+IBR 
+
+
 ## Baseline Reproduction
 We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are not publicly available. The following steps explain how the baselines can be reproduced.
 
@@ -132,7 +170,13 @@ python reproduction/train_lbtp.py \
         --wandb_project wandb_project_name
 ```
 ### DBRNN-A
+We reproduced DBRNN-A following this [repository](https://github.com/hacetin/deep-triage/tree/master) and the paper. Since it is based on Tensorflow, we recommend creating a new environment using this [requirements file](reproduction/dbrnna/requirements.dbrnna.yml) similar to our project.
 
+Once the environment is created and activated, run the following script
+
+```bash
+python reproduction/dbrnna/main.py
+```
 
 ## Build Docker Image
 To build the Docker image for Triager X, run the following command:
