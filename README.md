@@ -148,7 +148,7 @@ triagerx_pipeline.get_recommendation(
         similarity_threshold=THRESHOLD_FOR_ISSUE_SIMILARITY,
     )
 ```
-This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.**
+This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 here that can be used directly [**Openj9 - Trained Weights 50 Developers**](https://drive.google.com/file/d/1gYbOboGUjVqCUEDNWdHC1GBR1qcrfgn5/view?usp=sharing).
 
 ## Optimizing Hyperparameters for IBR
 TriagerX IBR can be optimized through Grid Search with the following script. The process is to use different combination of hyperparameters and see which combination works the best on a specific test data. a numeric list of ranges for different parameters is passed and run on TriagerX pipeline using a specific test data. All results using all combination are then saved to a CSV. The best performing hyperparaneters are then used for final use.
@@ -197,29 +197,30 @@ TriagerX framework provides fast & clean deployment through FastAPI. To make the
     ```
 You can also invoke the endpoint with Swagger UI dashboard. To access the UI for using the API or reading the documentation, navigate to the following address once the API is up and running: http://127.0.0.1:8000/docs
 
-## Build Docker Image
+## Containzerization
+### Build Docker Image
 The framework along with the recommendation API can also be dockarized and run inside a docker container. To build the Docker image for Triager X when all the required configuration is done from above, run the following command:
 
 ```shell
 docker build -t triagerx .
 ```
 
-## Load Docker Image
+### Load Docker Image
 To build the Docker image for Triager X, run the following command:
 
 ```shell
 docker load -i triagerx.tar
 ```
 
-## Run Docker Container
+### Run Docker Container
 To run the Docker container on CPU, use the following command:
-### CPU
+#### CPU
 ```shell
 docker run --rm -p 8000:80 --name triagerx triagerx
 ```
 
 To run the Docker container with GPU support, use the following command:
-### GPU
+#### GPU
 ```shell
 docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
 ```
@@ -247,10 +248,13 @@ python reproduction/train_lbtp.py \
         --wandb_project wandb_project_name
 ```
 ### DBRNN-A
-We reproduced DBRNN-A following this [repository](https://github.com/hacetin/deep-triage/tree/master) and the paper. Since it is based on Tensorflow, we recommend creating a new environment using this [requirements file](reproduction/dbrnna/requirements.dbrnna.yml) similar to our project.
+We reproduced DBRNN-A following this [repository](https://github.com/hacetin/deep-triage/tree/master) and the original paper. Since it is based on Tensorflow, we recommend creating a new environment using this [requirements file](reproduction/dbrnna/requirements.dbrnna.yml) similar to our project.
 
 Once the environment is created and activated, run the following script
 
 ```bash
 python reproduction/dbrnna/main.py
 ```
+
+## Additional Materials
+Some additional notebooks are provided under [`notebook`](notebook) directory that were used for evaluation/exploratory analysis or visualization.
