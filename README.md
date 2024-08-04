@@ -7,12 +7,12 @@ TriagerX is a novel triaging framework designed to streamline the process of han
 Create a new `conda` environment by executing the following command:
 
 ```bash
-conda env create -f environment.yml
+conda env create -f environment.dev.yml
 ```
 Activate the environment by:
 
 ```bash
-conda activate triagerxenv
+conda activate triagerxdev
 ```
 
 ## Preparing the Datasets
@@ -40,15 +40,13 @@ python util/issue_dump.py --path data/openj9 --owner openj9 --repo openj9
 ```
 However, a github token is required. We set the token on `.env` with `GH_TOKEN` key.
 
-Once the issue data is downloaded, we can use this data for TriagerX IBR component and prepare it for TriagerX CBR training. Similarly, `*_bug_data.csv` is used for training TriagerX CBR where we have issue summaries, descriptions and the bug fixers. This CSV datasets can be prepared by using `util/make_dataset.py` script. We just need to refer the JSON directory root (e.g., `data/openj9/issue_data`) and the output CSV path. This step is also not required if the provided data is used.
+Once the issue data is downloaded, we can use this data for TriagerX IBR component and prepare it for TriagerX CBR training. Similarly, `*_bug_data.csv` is used for training TriagerX CBR where we have issue summaries, descriptions and the bug fixers. This CSV datasets can be prepared by using [`util/make_dataset.py`](util/make_dataset.py) script. We just need to refer the JSON directory root (e.g., `data/openj9/issue_data`) and the output CSV path. This step is also not required if the provided data is used.
 
 
 ## Training
 _All the models are trained on NVIDIA A100 GPU. We recommend to use the same. While TriagerX can also be trained on V100 GPUs, the large variants of DeBERTa or RoBERTa may require more space when trained with CNN classifiers._
 
-We provide seperate training pipelines for each dataset. All the training scripts can be found in `training/developer` directory.
-
-Training scripts require training configs defined in `yaml` files. All of our training configs can be found under `training/training_config`.
+We provide seperate training pipelines for each dataset. All the training scripts can be found in [`training/developer`](training/developer) directory. Training scripts require training configs defined in `yaml` files. Each training pipeline on each dataset can run on 3 different types of configuration (e.g., **triagerx, cnn-transformer, fcn-transformer**). Configuration files are provided for all combinations. All of our training configs can be found under [`training/training_config`](training/training_config).
 
 Some configuration parameters are described below:
 
@@ -62,7 +60,7 @@ base_transformer_models:
 # List of pre-trained transformer model keys from the HuggingFace repository to be used as base models for the ensemble. Multiple models to be used only when we are training TriagerX configuration.
 
 unfrozen_layers: 3
-# Number of layers of PLM to unfreeze during training. Unfrozen layers will be fine-tuned while the rest remain frozen.
+# Number of layers of PLM to unfreeze during training. Unfrozen layers will be fine-tuned while the rest remain frozen. -1 means all layers will be trained.
 
 num_classifiers: 3
 # Number of classifiers to include in the ensemble. This parameter defines how many separate classifiers will be trained and used for predictions.
@@ -106,8 +104,7 @@ python training/developer/developer_training_openj9.py \
         --dataset_path ~absolute-path/data/openj9/openj9_bug_data.csv \
         --seed 42
 ```
-_In our experimental setup, we used SLURM to train the models. Those scripts can be found under `scripts` directory._
-If `wandb` is used, a valid `WANDB_API_KEY` is required in the environment variable. It can be turned off manually from the training script by setting:
+_If `wandb` is used, a valid `WANDB_API_KEY` is required in the environment variable. It can be turned off manually from the training script by setting:
 ```python
 log_manager = EpochLogManager(wandb_config=None)
 ```
@@ -148,7 +145,7 @@ triagerx_pipeline.get_recommendation(
         similarity_threshold=THRESHOLD_FOR_ISSUE_SIMILARITY,
     )
 ```
-This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 here that can be used directly [**Openj9 - Trained Weights 50 Developers**](https://drive.google.com/file/d/1gYbOboGUjVqCUEDNWdHC1GBR1qcrfgn5/view?usp=sharing).
+This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 here that can be used directly [**Openj9 - Trained Weights (50 Developers)**](https://drive.google.com/file/d/1gYbOboGUjVqCUEDNWdHC1GBR1qcrfgn5/view?usp=sharing).
 
 ## Optimizing Hyperparameters for IBR
 TriagerX IBR can be optimized through Grid Search with the following script. The process is to use different combination of hyperparameters and see which combination works the best on a specific test data. a numeric list of ranges for different parameters is passed and run on TriagerX pipeline using a specific test data. All results using all combination are then saved to a CSV. The best performing hyperparaneters are then used for final use.
@@ -234,8 +231,8 @@ We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are no
 Firstly, we distill RoBERTa-large using Patient Knowledge Distillation. The model can be distilled with the following command. The example below demonstrates distillation for the Google Chromium dataset.
 ```bash
 python reproduction/lbtp_distillation.py \
---dataset_path data/deeptriage/google_chrome/deep_data.csv \
---model_weights_path output/lbtp_gc_base.pt
+        --dataset_path data/deeptriage/google_chrome/deep_data.csv \
+        --model_weights_path output/lbtp_gc_base.pt
 ```
 Once distillation is done, the classifier can be trained with the following command:
 ```bash

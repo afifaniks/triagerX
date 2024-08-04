@@ -26,8 +26,8 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc
 ENV PATH $CONDA_DIR/bin:$PATH
 
 # Copy the environment.yml file and create the conda environment
-COPY environment.yml .
-RUN conda env create -f environment.yml && conda clean -a
+COPY environment.prod.yml .
+RUN conda env create -f environment.prod.yml && conda clean -a
 ENV PATH /opt/conda/envs/triagerxenv/bin:$PATH
 
 # Set environment variables for CUDA
