@@ -9,7 +9,7 @@ from loguru import logger
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
-sys.path.append("/home/mdafifal.mamun/notebooks/triagerX/")
+sys.path.append("../triagerX/")
 
 from triagerx.model.module_factory import ModelFactory
 from triagerx.system.triagerx import TriagerX
@@ -18,44 +18,15 @@ tqdm.pandas()
 
 torch.manual_seed(42)
 
-target_components = [
-    "comp:vm",
-    "comp:jvmti",
-    "comp:jclextensions",
-    "comp:test",
-    "comp:build",
-    "comp:gc",
-]
-target_components = sorted(target_components)
-
 
 # PAPER CONFIG
-# df_train = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_train.csv"
-# )
-# df_test = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_test.csv"
-# )
-# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50.csv"
-# developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
-# component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
-# train_embeddings_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_50devs.npy"
-# MAX_K = 20
+df_train = pd.read_csv("./data/openj9/openj9_train.csv")
+df_test = pd.read_csv("./data/openj9/openj9_test.csv")
+output_file = "grid_search_openj9.csv"
+developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+train_embeddings_path = "./data/openj9/embeddings_50devs.npy"
+MAX_K = 20
 
-# IBM CONFIG
-df_train = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/app/app_data/openj9_train_17_devs.csv"
-)
-df_test = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/app/app_data/openj9_test_17_devs.csv"
-)
-output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_ibm.csv"
-developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
-component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
-train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_ibm.npy"
-)
-MAX_K = 10
 
 df_train["owner"] = df_train.owner.apply(lambda x: x.lower())
 df_test["owner"] = df_test.owner.apply(lambda x: x.lower())
@@ -69,17 +40,6 @@ logger.info(f"Test dataset size: {len(df_test)}")
 
 lbl2idx = dict(zip(df_train["owner"], df_train["owner_id"]))
 idx2lbl = dict(zip(df_train["owner_id"], df_train["owner"]))
-
-# df_train = df_train[df_train["component"].notna()]
-# df_test = df_test[df_test["component"].notna()]
-
-
-comp_id2label = {}
-comp_lbl2id = {}
-
-for i, comp in enumerate(target_components):
-    comp_id2label[i] = comp
-    comp_lbl2id[comp] = i
 
 base_transformer_models = ["microsoft/deberta-base", "roberta-base"]
 
@@ -97,20 +57,6 @@ dev_model = ModelFactory.get_model(
 
 dev_model.load_state_dict(torch.load(developer_model_weights))
 
-
-comp_model = ModelFactory.get_model(
-    model_key="triagerx",
-    output_size=6,
-    unfrozen_layers=3,
-    num_classifiers=3,
-    base_models=["microsoft/deberta-base", "roberta-base"],
-    dropout=0.2,
-    max_tokens=256,
-    label_map=comp_id2label,
-)
-comp_model.load_state_dict(torch.load(component_model_weights))
-
-
 logger.debug("Generating embeddings...")
 similarity_model = SentenceTransformer("all-mpnet-base-v2")
 
@@ -120,12 +66,11 @@ if not os.path.exists(train_embeddings_path):
     np.save(train_embeddings_path, encodings)
 
 
-def get_recommendation(trx, test_idx, k_comp, k_dev, k_rank, sim):
+def get_recommendation(trx, test_idx, k_dev, k_rank, sim):
     test_data = df_test.iloc[test_idx]
 
     return trx.get_recommendation(
         test_data.text,
-        k_comp=k_comp,
         k_dev=k_dev,
         k_rank=k_rank,
         similarity_threshold=sim,
@@ -172,13 +117,11 @@ def evaluate_recommendations(params):
     print(expected_users)
 
     trx = TriagerX(
-        component_prediction_model=comp_model,
         developer_prediction_model=dev_model,
         similarity_model=similarity_model,
-        issues_path="/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_issue_data_6_7_24",
+        issues_path="./data/openj9/issue_data",
         train_embeddings=train_embeddings_path,
         developer_id_map=lbl2idx,
-        component_id_map=comp_lbl2id,
         expected_developers=expected_users,
         train_data=df_train,
         device="cuda",
@@ -193,7 +136,7 @@ def evaluate_recommendations(params):
 
     for i in tqdm(range(len(df_test)), total=len(df_test), desc="Processing..."):
         rec = get_recommendation(
-            trx, i, k_comp=3, k_dev=MAX_K, k_rank=20, sim=similarity_threshold
+            trx, i, k_dev=MAX_K, k_rank=MAX_K, sim=similarity_threshold
         )
         recommendations.append(rec)
 
@@ -206,22 +149,13 @@ def evaluate_recommendations(params):
     return top_1, top_3, top_5, top_10, top_20
 
 
-# parameter_ranges = {
-#     "similarity_prediction_weight": [0.5, 0.6, 0.7],
-#     "time_decay_factor": [0.01, 0.03, 0.05],
-#     "direct_assignment_score": [1.0, 1.5, 2.0],
-#     "contribution_score": [1.0, 1.5, 2.0],
-#     "discussion_score": [0.5, 1.0],
-#     "similarity_threshold": [0.5, 0.6, 0.65, 0.7],
-# }
-
 parameter_ranges = {
-    "similarity_prediction_weight": [0.65],
-    "time_decay_factor": [0.01],
-    "direct_assignment_score": [0.5],
-    "contribution_score": [1.5],
-    "discussion_score": [0.2],
-    "similarity_threshold": [0.5],
+    "similarity_prediction_weight": [0.5, 0.65, 0.7],
+    "time_decay_factor": [0.01, 0, 0.01, 0.02],
+    "direct_assignment_score": [0.2, 0.5, 1.0],
+    "contribution_score": [1.0, 1.5, 2.0],
+    "discussion_score": [0.5, 1.0],
+    "similarity_threshold": [0.5, 0.6, 0.7],
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))

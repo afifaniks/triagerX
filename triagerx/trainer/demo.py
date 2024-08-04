@@ -10,7 +10,7 @@ from loguru import logger
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
-sys.path.append("/home/mdafifal.mamun/notebooks/triagerX/")
+sys.path.append("../triagerX/")
 
 from triagerx.model.module_factory import ModelFactory
 from triagerx.system.triagerx import TriagerX
@@ -72,7 +72,7 @@ MAX_K = 20
 trx = TriagerX(
     developer_prediction_model=dev_model,
     similarity_model=similarity_model,
-    issues_path="/home/mdafifal.mamun/notebooks/triagerX/data/openj9/issue_data",
+    issues_path="./data/openj9/issue_data",
     train_embeddings=train_embeddings_path,
     developer_id_map=lbl2idx,
     expected_developers=expected_users,

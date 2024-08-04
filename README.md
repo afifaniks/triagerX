@@ -2,10 +2,6 @@
 
 Triager X is a novel triaging framework designed to streamline the process of handling GitHub issues. By analyzing the title and description of a GitHub issue, and using two rankers (1) TriagerX Content-based Ranker (CBR), (2) TriagerX Interaction-based Ranker (IBR), Triager X recommends the most appropriate developers to address the issue. This tool can significantly reduce the time and effort needed to manage and assign issues in software projects.
 
-## Features
-- **Automatic Component Recommendation**: Suggests relevant components for each GitHub issue based on its content.
-- **Developer Assignment**: Identifies and recommends developers best suited to handle the issue.
-- **Efficient Issue Management**: Enhances productivity by automating the triaging process, allowing teams to focus on resolving issues rather than sorting them.
 
 ## Environmental Setup
 Create a new `conda` environment by executing the following command:
@@ -16,27 +12,26 @@ conda env create -f environment.yml
 Activate the environment by:
 
 ```bash
-conda activate myenv
+conda activate triagerxenv
 ```
 
 ## Preparing the Datasets
-Download the bug datasets compressed in this zip file: [**data.zip - Google Drive**](https://drive.google.com/file/d/1UUcPWk0nO31xlTyZnhy88hJ7yq3MmkZ-/view?usp=drive_link)
+Download the bug datasets compressed in this zip file: [**data.zip - Google Drive**](https://drive.google.com/file/d/1TGnCJvQb04W8pae0pfm4K3_fu0ySkvI1/view?usp=sharing)
 
-Once the compressed zip is downloaded, extract it to a suitable directory. The directory structure should be something similar to this:
+Once the compressed zip is downloaded, **extract it to the root of the project directory**. The directory structure should be something similar to this:
 ```bash
 data/
-├── deeptriage/
 │   ├── google_chrome/
 │   ├── mozilla_core/
-│   └── mozilla_firefox/
-├── openj9/
-│   ├── issue_data/
-│   └── openj9_bug_data.csv
-└── typescript/
-    ├── issue_data/
-    └── ts_bug_data.csv
+│   ├── mozilla_firefox/
+│   ├── openj9/
+│   │   ├── issue_data/
+│   │   └── openj9_bug_data.csv
+│   └── typescript/
+│       ├── issue_data/
+│       └── ts_bug_data.csv
 ```
-The data/datasets inside `deeptriage` directory is from [literature](https://dl.acm.org/doi/abs/10.1145/3297001.3297023) and collected from [this repository](https://github.com/hacetin/deep-triage). This can only be used with the TriagerX CBR.
+The data/datasets inside `google_chromium`, `mozilla_core`, and `mozilla_firefox` directories are from [literature](https://dl.acm.org/doi/abs/10.1145/3297001.3297023) and collected from [this repository](https://github.com/hacetin/deep-triage). This can only be used with the TriagerX CBR.
 
 `openj9` and `typescript` directories contain the datasets we prepared. Each of these directories have complete github issues data with interaction events in `json` format. While to train or run TriagerX, no further data preparation is required as we are providing it, issue data can be downloaded using Github API from any repository using the following pipeline:
 
@@ -49,6 +44,8 @@ Once the issue data is downloaded, we can use this data for TriagerX IBR compone
 
 
 ## Training
+_All the models are trained on NVIDIA A100 GPU. We recommend to use the same. While TriagerX can also be trained on V100 GPUs, the large variants of DeBERTa or RoBERTa may require more space when trained with CNN classifiers._
+
 We provide seperate training pipelines for each dataset. All the training scripts can be found in `training/developer` directory.
 
 Training scripts require training configs defined in `yaml` files. All of our training configs can be found under `training/training_config`.
@@ -143,11 +140,23 @@ triagerx_pipeline.get_recommendation(
         similarity_threshold=THRESHOLD_FOR_ISSUE_SIMILARITY,
     )
 ```
-This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script.
+This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.**
 
 ## Optimizing Hyperparameters for IBR
-IBR 
+TriagerX IBR can be optimized through Grid Search with the following script. The process is to use different combination of hyperparameters and see which combination works the best on a specific test data. a numeric list of ranges for different parameters is passed and run on TriagerX pipeline using a specific test data. All results using all combination are then saved to a CSV. The best performing hyperparaneters are then used for final use.
 
+For example, in our grid search process, we can use hyperparameter ranges by defining them in a dictionary.
+```json
+parameter_ranges = {
+    "similarity_prediction_weight": [0.50, 0.65],
+    "time_decay_factor": [-0.01, 0.01],
+    "direct_assignment_score": [0.2, 0.5],
+    "contribution_score": [0.5, 1.5],
+    "discussion_score": [0.1, 0.2],
+    "similarity_threshold": [0.2, 0.5],
+}
+```
+Grid Search is implemented in this script: [`triagerx/trainer/grid_search.py`](triagerx/trainer/grid_search.py).
 
 ## Baseline Reproduction
 We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are not publicly available. The following steps explain how the baselines can be reproduced.
