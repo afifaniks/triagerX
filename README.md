@@ -122,7 +122,7 @@ python reproduction/lbtp_distillation.py \
 --model_weights_path output/lbtp_gc_base.pt
 ```
 Once distillation is done, the classifier can be trained with the following command:
-```
+```bash
 python reproduction/train_lbtp.py \
         --dataset_path data/deeptriage/google_chrome/classifier_data_20.csv \
         --embedding_model_weights output/lbtp_gc_base.pt \
