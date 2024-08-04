@@ -197,7 +197,7 @@ TriagerX framework provides fast & clean deployment through FastAPI. To make the
     ```
 You can also invoke the endpoint with Swagger UI dashboard. To access the UI for using the API or reading the documentation, navigate to the following address once the API is up and running: http://127.0.0.1:8000/docs
 
-## Containzerization
+## Docker Containerization
 ### Build Docker Image
 The framework along with the recommendation API can also be dockarized and run inside a docker container. To build the Docker image for Triager X when all the required configuration is done from above, run the following command:
 
