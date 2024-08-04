@@ -295,9 +295,11 @@ class TriagerX:
             issue_number = issue.issue_number
             contributors = self._get_contribution_data(issue_number)
 
+            print(issue, issue_number, sim_score)
+
             for key, users in contributors.items():
                 for user_data in users:
-                    user = user_data[0].lower()
+                    user = user_data[0]
                     created_at = user_data[1] if len(user_data) > 1 else None
 
                     if user not in self._expected_developers:
@@ -306,6 +308,8 @@ class TriagerX:
 
                     contribution_point = self._get_contribution_point(key)
                     time_decay = self._calculate_time_decay(created_at)
+
+                    print(user, sim_score * contribution_point * time_decay)
 
                     user_contribution_scores[user] = (
                         user_contribution_scores.get(user, 0)
@@ -337,6 +341,17 @@ class TriagerX:
             return self._direct_assignment_score
         return self._discussion_score
 
+    def piecewise_decay_function(
+        self, days, slow_decay_rate, fast_decay_rate, threshold_days
+    ):
+
+        if days <= threshold_days:
+            return np.exp(-slow_decay_rate * days)
+        else:
+            return np.exp(-slow_decay_rate * threshold_days) * np.exp(
+                -fast_decay_rate * (days - threshold_days)
+            )
+
     def _calculate_time_decay(self, created_at: Optional[str]) -> float:
         """
         Calculates the time decay factor for a given creation time.
@@ -351,7 +366,14 @@ class TriagerX:
             return 1
 
         contribution_date = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-        days_since_contribution = (datetime.now() - contribution_date).days
+        days_since_contribution = (datetime(2024, 7, 3) - contribution_date).days
+
+        # return self.piecewise_decay_function(
+        #     days_since_contribution,
+        #     self._time_decay_factor / 10,
+        #     self._time_decay_factor,
+        #     180,
+        # )
         return math.exp(-self._time_decay_factor * days_since_contribution)
 
     def _get_contribution_data(

@@ -111,7 +111,7 @@ python training/developer/developer_training_openj9.py \
 ```
 _In our experimental setup, we used SLURM to train the models. Those scripts can be found under `scripts` directory._
 
-## Baselines
+## Baseline Reproduction
 
 ## Build Docker Image
 To build the Docker image for Triager X, run the following command:
