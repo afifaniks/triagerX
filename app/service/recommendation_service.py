@@ -24,9 +24,6 @@ class RecommendationService:
 
     def _initialize_models(self):
         logger.debug("Loading pretrained weights...")
-        self._component_model = self._load_trained_model(
-            self._config["component_model"]
-        )
         self._developer_model = self._load_trained_model(
             self._config["developer_model"]
         )
@@ -45,16 +42,19 @@ class RecommendationService:
 
     def _initialize_triager(self):
         logger.debug("Initializing Triager X engine...")
+        train_data = pd.read_csv(self._config["data"]["train_data"])
+        developer_id_map = pd.Series(
+            train_data["owner_id"].values, index=train_data["owner"]
+        ).to_dict()
+
         self.triager = TriagerX(
-            component_prediction_model=self._component_model,
             developer_prediction_model=self._developer_model,
             similarity_model=self._similarity_model,
-            train_data=pd.read_csv(self._config["data"]["train_data"]),
+            train_data=train_data,
             train_embeddings=self._config["similarity_model"]["embeddings_path"],
             issues_path=self._config["data"]["issues_path"],
-            developer_id_map=self._config["developer_id_map"],
-            component_id_map=self._config["component_id_map"],
-            expected_developers=set(self._config["developer_id_map"].keys()),
+            developer_id_map=developer_id_map,
+            expected_developers=set(developer_id_map.keys()),
             device=self._device,
             similarity_prediction_weight=self._config["contribution_score_params"][
                 "similarity_prediction_weight"
@@ -81,7 +81,6 @@ class RecommendationService:
         processed_issue = TextProcessor.prepare_text(issue_title, issue_description)
         return self.triager.get_recommendation(
             processed_issue,
-            k_comp=3,
             k_dev=3,
             k_rank=self._config["contribution_score_params"]["maximum_similar_issues"],
             similarity_threshold=self._config["contribution_score_params"][

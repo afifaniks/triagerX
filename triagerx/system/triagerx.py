@@ -251,7 +251,7 @@ class TriagerX:
 
             for key, users in contributors.items():
                 for user_data in users:
-                    user = user_data[0]
+                    user = user_data[0].lower()
                     created_at = user_data[1] if len(user_data) > 1 else None
 
                     if user not in self._expected_developers:
