@@ -104,7 +104,7 @@ python training/developer/developer_training_openj9.py \
         --dataset_path ~absolute-path/data/openj9/openj9_bug_data.csv \
         --seed 42
 ```
-_If `wandb` is used, a valid `WANDB_API_KEY` is required in the environment variable. It can be turned off manually from the training script by setting:
+_If `wandb` is used, a valid `WANDB_API_KEY` is required in the environment variable. It can be turned off manually from the training script by setting:_
 ```python
 log_manager = EpochLogManager(wandb_config=None)
 ```
@@ -228,7 +228,7 @@ _Please note that the Docker container is currently intended for `ppc64le` platf
 We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are not publicly available. The following steps explain how the baselines can be reproduced.
 
 ### LBT-P
-Firstly, we distill RoBERTa-large using Patient Knowledge Distillation. The model can be distilled with the following command. The example below demonstrates distillation for the Google Chromium dataset.
+Firstly, we distill RoBERTa-large using Patient Knowledge Distillation. The model can be distilled with the following command. The example below demonstrates distillation for the Google Chromium dataset. LBT-P can be trained with TriagerX's environment as there is no exclusive dependencies.
 ```bash
 python reproduction/lbtp_distillation.py \
         --dataset_path data/deeptriage/google_chrome/deep_data.csv \
