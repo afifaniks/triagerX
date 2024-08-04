@@ -33,3 +33,5 @@ grid_reports/*
 app/app_data/openj9_issue_data*
 artifacts/
 old_data/*
+app/app_data/issue_data/
+app/app_data/openj9*
