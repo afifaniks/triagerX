@@ -24,7 +24,7 @@ def health_check():
 
 @app.post(
     "/recommendation",
-    description="Get component and developer recommendations for Openj9 Issues",
+    description="Get developer recommendations for Openj9 Issues",
 )
 def get_recommendation(request: RecommendationRequest) -> RecommendationResponse:
     logger.debug(f"Received request: {request}")
@@ -32,6 +32,5 @@ def get_recommendation(request: RecommendationRequest) -> RecommendationResponse
         request.issue_title, request.issue_description
     )
     return RecommendationResponse(
-        recommended_components=recommendations["predicted_components"],
         recommended_developers=recommendations["combined_ranking"],
     )

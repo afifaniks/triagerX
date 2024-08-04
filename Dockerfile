@@ -28,7 +28,7 @@ ENV PATH $CONDA_DIR/bin:$PATH
 # Copy the environment.yml file and create the conda environment
 COPY environment.yml .
 RUN conda env create -f environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/myenv/bin:$PATH
+ENV PATH /opt/conda/envs/triagerxenv/bin:$PATH
 
 # Set environment variables for CUDA
 ENV CUDA_VISIBLE_DEVICES=0
@@ -41,4 +41,4 @@ COPY . .
 EXPOSE 80
 
 # Run the main.py script when the container launches
-CMD ["conda", "run", "--no-capture-output", "-n", "myenv", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["conda", "run", "--no-capture-output", "-n", "triagerxenv", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

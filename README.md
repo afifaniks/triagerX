@@ -1,6 +1,6 @@
-# Triager X
+# TriagerX
 
-Triager X is a novel triaging framework designed to streamline the process of handling GitHub issues. By analyzing the title and description of a GitHub issue, and using two rankers (1) TriagerX Content-based Ranker (CBR), (2) TriagerX Interaction-based Ranker (IBR), Triager X recommends the most appropriate developers to address the issue. This tool can significantly reduce the time and effort needed to manage and assign issues in software projects.
+TriagerX is a novel triaging framework designed to streamline the process of handling GitHub issues. By analyzing the title and description of a GitHub issue, and using two rankers (1) TriagerX Content-based Ranker (CBR), (2) TriagerX Interaction-based Ranker (IBR), TriagerX recommends the most appropriate developers to address the issue. This tool can significantly reduce the time and effort needed to manage and assign issues in software projects. In this README, we provide extensive guidelines on how to get TriagerX up and running.
 
 
 ## Environmental Setup
@@ -100,13 +100,21 @@ wandb_project: "wandb_project_key"
 ```
 
 Once the training configuration is ready, training can simply be started by:
-```bash
+```shell
 python training/developer/developer_training_openj9.py \
         --config training/training_config/openj9/triagerx.yaml \
-        --dataset_path data/openj9_bug_data.csv \
+        --dataset_path ~absolute-path/data/openj9/openj9_bug_data.csv \
         --seed 42
 ```
 _In our experimental setup, we used SLURM to train the models. Those scripts can be found under `scripts` directory._
+If `wandb` is used, a valid `WANDB_API_KEY` is required in the environment variable. It can be turned off manually from the training script by setting:
+```python
+log_manager = EpochLogManager(wandb_config=None)
+```
+In case, `triagerx` modules can not be detected by the interpreter, please check for this specific line in the scripts and make sure you append the correct repository root to the system path.
+```python
+sys.path.append("../triagerX")
+```
 
 ## TriagerX Recommendation Generation
 Once the required CBR model is trained, recommendations can be generated using [`TriagerX`](triagerx/system/triagerx.py) pipeline.
@@ -158,6 +166,66 @@ parameter_ranges = {
 ```
 Grid Search is implemented in this script: [`triagerx/trainer/grid_search.py`](triagerx/trainer/grid_search.py).
 
+## Running the API
+TriagerX framework provides fast & clean deployment through FastAPI. To make the recommendation API up and running for Openj9 (Can also be used for other supported datasets) follow the provided steps:
+
+1. Move the saved weights for TriagerX CBR model under `app/saved_states`.
+2. Copy all github issues from `data/openj9/issue_data` to `app/app_data/issue_data`.
+3. Copy the train csv file from `data/openj9/openj9_train.csv` to `app/app_data/openj9_train.csv`.
+4. Set configurations for the app in [`app/config/triagerx_config.yaml`](app/config/triagerx_config.yaml) file. It is self explanatory.
+5. Once the configuration is set, run the API by following command:
+    ```shell
+    uvicorn main:app --host 0.0.0.0 --port 8080
+   ```
+6. The first boot may take some time to initialize a few things. When the app startup is complete, the API can be used by:
+    ```bash
+    curl -X 'POST' \
+      'http://127.0.0.1:8000/recommendation' \
+      -H 'accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{"issue_title": "Issue Title from GitHub", "issue_description": "Issue Description from GitHub"}'
+   ```
+7. The API will respond with a JSON object containing the recommended components and developers. Here is an example response:
+    ```json
+    {
+      "recommended_developers": [
+        "pshipton",
+        "keithc-ca",
+        "babsingh"
+      ]
+    }
+    ```
+You can also invoke the endpoint with Swagger UI dashboard. To access the UI for using the API or reading the documentation, navigate to the following address once the API is up and running: http://127.0.0.1:8000/docs
+
+## Build Docker Image
+The framework along with the recommendation API can also be dockarized and run inside a docker container. To build the Docker image for Triager X when all the required configuration is done from above, run the following command:
+
+```shell
+docker build -t triagerx .
+```
+
+## Load Docker Image
+To build the Docker image for Triager X, run the following command:
+
+```shell
+docker load -i triagerx.tar
+```
+
+## Run Docker Container
+To run the Docker container on CPU, use the following command:
+### CPU
+```shell
+docker run --rm -p 8000:80 --name triagerx triagerx
+```
+
+To run the Docker container with GPU support, use the following command:
+### GPU
+```shell
+docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
+```
+
+_Please note that the Docker container is currently intended for `ppc64le` platform, as per the requirements of our industrial partner but it should be working in other platforms with just changing the conda repository to a suitable one from here: https://repo.anaconda.com/miniconda/ in the Dockerfile._
+
 ## Baseline Reproduction
 We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are not publicly available. The following steps explain how the baselines can be reproduced.
 
@@ -186,77 +254,3 @@ Once the environment is created and activated, run the following script
 ```bash
 python reproduction/dbrnna/main.py
 ```
-
-## Build Docker Image
-To build the Docker image for Triager X, run the following command:
-
-```shell
-docker build -t triagerx .
-```
-
-## Load Docker Image
-To build the Docker image for Triager X, run the following command:
-
-```shell
-docker load -i triagerx.tar
-```
-
-## Run Docker Container
-To run the Docker container on CPU, use the following command:
-### CPU
-```shell
-docker run --rm -p 8000:80 --name triagerx triagerx
-```
-
-To run the Docker container with GPU support, use the following command:
-### GPU
-```shell
-docker run --gpus all --rm -p 8000:80 --name triagerx triagerx
-```
-
-## Example API Request
-To get component and developer recommendations for a GitHub issue, make a POST request to the `/recommendation` endpoint. Here is an example using `curl`:
-
-```shell
-curl -X 'POST' \
-  'http://127.0.0.1:8000/recommendation' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "issue_title": "Issue Title from GitHub",
-  "issue_description": "Issue Description from GitHub"
-}'
-```
-
-## Example API Response
-The API will respond with a JSON object containing the recommended components and developers. Here is an example response:
-
-```json
-{
-  "recommended_components": [
-    "comp:vm",
-    "comp:gc",
-    "comp:test"
-  ],
-  "recommended_developers": [
-    "pshipton",
-    "keithc-ca",
-    "babsingh"
-  ]
-}
-```
-
-## Swagger UI
-
-You can also invoke the endpoint with Swagger UI.
-To access the UI for using the API or reading the documentation,
-navigate to the following address once the container is up and running:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-## Usage
-1. **Build the Docker Image**: Follow the instructions in the "Build Docker Image" section.
-2. **Run the Docker Container**: Follow the instructions in the "Run Docker Container" section.
-3. **Make API Requests**: Use the example API request to get recommendations for your GitHub issues.
