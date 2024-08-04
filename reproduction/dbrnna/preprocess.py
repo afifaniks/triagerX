@@ -189,11 +189,11 @@ def preprocess_dataset(dataset_name):
 
 
 def preprocess_all_datasets():
-    # preprocess_dataset("google_chromium")
-    # preprocess_dataset("mozilla_core")
-    # preprocess_dataset("mozilla_firefox")
+    preprocess_dataset("google_chromium")
+    preprocess_dataset("mozilla_core")
+    preprocess_dataset("mozilla_firefox")
     preprocess_csv_dataset("openj9")
-    # preprocess_csv_dataset("typescript")
+    preprocess_csv_dataset("typescript")
 
 
 def read_json_and_clean(filename):
