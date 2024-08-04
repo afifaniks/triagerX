@@ -1,26 +1,26 @@
 import numpy as np
-from keras.preprocessing import sequence
-from keras.models import Model
+from dataset import chronological_cv
+from keras import backend as K
+from keras.callbacks import EarlyStopping
 from keras.layers import (
+    GRU,
+    LSTM,
+    Activation,
+    BatchNormalization,
     Dense,
     Dropout,
     Embedding,
-    LSTM,
-    GRU,
-    BatchNormalization,
     Flatten,
     Input,
-    RepeatVector,
-    Permute,
-    multiply,
     Lambda,
-    Activation,
+    Permute,
+    RepeatVector,
+    multiply,
 )
 from keras.layers.merge import concatenate
+from keras.models import Model
 from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping
-from keras import backend as K
-from dataset import chronological_cv
+from keras.preprocessing import sequence
 
 np.random.seed(1337)
 
@@ -28,18 +28,18 @@ np.random.seed(1337)
 def dnrnna_model(
     input_shape, num_output, num_rnn_unit=512, num_dense_unit=1000, rnn_type="gru"
 ):
-    """ Deep bidirectional RNN model using Keras library
-        
-        # Example
-        ```python
-            dnrnna_model((50, 200), 1061)
-        ```
-        # Arguments
-        input_shape: Tuple for model input as (max_sentence_len, embed_size_word2vec)
-        num_output: Number of unique labels in the data
-        num_rnn_unit: Number of rnn units
-        num_dense_unit: Number of dense layer units
-        rnn_type: One of "lstm" and "gru"
+    """Deep bidirectional RNN model using Keras library
+
+    # Example
+    ```python
+        dnrnna_model((50, 200), 1061)
+    ```
+    # Arguments
+    input_shape: Tuple for model input as (max_sentence_len, embed_size_word2vec)
+    num_output: Number of unique labels in the data
+    num_rnn_unit: Number of rnn units
+    num_dense_unit: Number of dense layer units
+    rnn_type: One of "lstm" and "gru"
     """
     if rnn_type not in ["lstm", "gru"]:
         print("Wrong RNN type.")
@@ -133,18 +133,18 @@ def run_dbrnna_chronological_cv(
     rnn_type="lstm",
     merged_wordvec_model=False,
 ):
-    """ Chronological cross validation for DBRNN-A model
+    """Chronological cross validation for DBRNN-A model
 
-        # Example
-        ```python
-            run_dbrnna_chronological_cv("google_chromium", 0, 10)
-        ```
-        # Arguments
-        dataset_name: Available datasets  are "google_chromium", "mozilla_core", "mozilla_firefox"
-        min_train_samples_per_class: This is a dataet parameter, and needs to be one of 0, 5, 10 and 20
-        num_cv: Number of chronological cross validation
-        rnn_type: RNN model to use in keras model, one of "lstm" and "gru"
-        merged_wordvec_model: If `True`, use open bugs from all datasets 
+    # Example
+    ```python
+        run_dbrnna_chronological_cv("google_chromium", 0, 10)
+    ```
+    # Arguments
+    dataset_name: Available datasets  are "google_chromium", "mozilla_core", "mozilla_firefox"
+    min_train_samples_per_class: This is a dataet parameter, and needs to be one of 0, 5, 10 and 20
+    num_cv: Number of chronological cross validation
+    rnn_type: RNN model to use in keras model, one of "lstm" and "gru"
+    merged_wordvec_model: If `True`, use open bugs from all datasets
     """
 
     if min_train_samples_per_class not in [0, 5, 10, 20]:
@@ -155,7 +155,13 @@ def run_dbrnna_chronological_cv(
         print("Wrong number of chronological cross validation (num_cv)")
         return
 
-    if dataset_name not in ["google_chromium", "mozilla_core", "mozilla_firefox", "openj9", "typescript"]:
+    if dataset_name not in [
+        "google_chromium",
+        "mozilla_core",
+        "mozilla_firefox",
+        "openj9",
+        "typescript",
+    ]:
         print("Wrong dataset name")
         return
 
@@ -174,7 +180,6 @@ def run_dbrnna_chronological_cv(
     )
 
     # print(slices)
-    
 
     slice_results = {}
     top_rank_k_accuracies = []
@@ -184,10 +189,6 @@ def run_dbrnna_chronological_cv(
         model = dnrnna_model(
             (max_sentence_len, embed_size_word2vec), len(classes), rnn_type=rnn_type
         )
-
-        exit()
-
-        # print(f"Num classes: {len(classes)}")
 
         # Train the deep learning model and test using the classifier
         early_stopping = EarlyStopping(monitor="val_loss", patience=5)
@@ -208,7 +209,11 @@ def run_dbrnna_chronological_cv(
         train_result["test_topk_accuracies"] = accuracy
         slice_results[i + 1] = train_result
         top_rank_k_accuracies.append(accuracy[-1])
-    
+
     print("Top{0} accuracies for all CVs: {1}".format(rank_k, top_rank_k_accuracies))
-    print("Average top{0} accuracy: {1}".format(rank_k, sum(top_rank_k_accuracies)/rank_k))
+    print(
+        "Average top{0} accuracy: {1}".format(
+            rank_k, sum(top_rank_k_accuracies) / rank_k
+        )
+    )
     return slice_results

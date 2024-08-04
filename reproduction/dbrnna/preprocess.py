@@ -1,8 +1,12 @@
+import json
+import re
+import string
+
+import nltk
 import numpy as np
 import pandas as pd
-import json, re, nltk, string
-from nltk.corpus import wordnet
 from gensim.models import Word2Vec
+from nltk.corpus import wordnet
 
 np.random.seed(1337)
 
@@ -185,11 +189,11 @@ def preprocess_dataset(dataset_name):
 
 
 def preprocess_all_datasets():
-    preprocess_dataset("google_chromium")
-    preprocess_dataset("mozilla_core")
-    preprocess_dataset("mozilla_firefox")
+    # preprocess_dataset("google_chromium")
+    # preprocess_dataset("mozilla_core")
+    # preprocess_dataset("mozilla_firefox")
     preprocess_csv_dataset("openj9")
-    preprocess_csv_dataset("typescript")
+    # preprocess_csv_dataset("typescript")
 
 
 def read_json_and_clean(filename):

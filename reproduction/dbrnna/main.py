@@ -5,13 +5,12 @@ import tensorflow as tf
 
 config = tensorflow.ConfigProto()
 config.gpu_options.allow_growth = True
-print('############## Allowing Growth ###########')
+print("############## Allowing Growth ###########")
 session = tf.Session(config=config)
 
 
 from dbrnna import run_dbrnna_chronological_cv
 from preprocess import preprocess_all_datasets
-
 
 preprocess_all_datasets()
 

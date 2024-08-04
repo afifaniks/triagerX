@@ -1,4 +1,4 @@
-name: dt
+name: dbrnna
 channels:
   - defaults
 dependencies:
@@ -89,9 +89,6 @@ dependencies:
       - nltk==3.4.5
       - notebook==6.4.10
       - numpy==1.19.5
-      - nvidia-cublas-cu12==12.5.3.2
-      - nvidia-cuda-runtime-cu12==12.5.82
-      - nvidia-cudnn-cu12==9.2.1.18
       - oauthlib==3.2.2
       - opt-einsum==3.3.0
       - packaging==21.3
@@ -115,12 +112,6 @@ dependencies:
       - send2trash==1.8.2
       - six==1.15.0
       - smart-open==6.4.0
-      - tensorboard==2.6.0
-      - tensorboard-data-server==0.6.1
-      - tensorboard-plugin-wit==1.8.1
-      - tensorflow-estimator==2.6.0
-      - tensorrt-bindings==8.6.1
-      - tensorrt-libs==8.6.1
       - termcolor==1.1.0
       - terminado==0.12.1
       - testpath==0.6.0
@@ -129,4 +120,3 @@ dependencies:
       - webencodings==0.5.1
       - widgetsnbextension==3.6.6
       - zipp==3.6.0
-prefix: /home/mdafifal.mamun/miniconda3/envs/dt
