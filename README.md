@@ -147,6 +147,8 @@ triagerx_pipeline.get_recommendation(
 ```
 This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 here that can be used directly [**Openj9 - Trained Weights (50 Developers)**](https://drive.google.com/file/d/1gYbOboGUjVqCUEDNWdHC1GBR1qcrfgn5/view?usp=sharing).
 
+For TriagerX IBR, we are currently using [**all-mpnet-base-v2**](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) but any supported models by [SentenceTransformer](https://www.sbert.net/index.html) that can utilize cosine-similarity score function can be used.
+
 ## Optimizing Hyperparameters for IBR
 TriagerX IBR can be optimized through Grid Search with the following script. The process is to use different combination of hyperparameters and see which combination works the best on a specific test data. a numeric list of ranges for different parameters is passed and run on TriagerX pipeline using a specific test data. All results using all combination are then saved to a CSV. The best performing hyperparaneters are then used for final use.
 
