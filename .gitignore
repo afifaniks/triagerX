@@ -32,3 +32,4 @@ tokenizer/deeptriage/vocab.json
 grid_reports/*
 app/app_data/openj9_issue_data*
 artifacts/
+old_data/*

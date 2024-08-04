@@ -112,6 +112,27 @@ python training/developer/developer_training_openj9.py \
 _In our experimental setup, we used SLURM to train the models. Those scripts can be found under `scripts` directory._
 
 ## Baseline Reproduction
+We reproduce literature baselines (LBT-P and DBRNN-A) as the source codes are not publicly available. The following steps explain how the baselines can be reproduced.
+
+### LBT-P
+Firstly, we distill RoBERTa-large using Patient Knowledge Distillation. The model can be distilled with the following command. The example below demonstrates distillation for the Google Chromium dataset.
+```bash
+python reproduction/lbtp_distillation.py \
+--dataset_path data/deeptriage/google_chrome/deep_data.csv \
+--model_weights_path output/lbtp_gc_base.pt
+```
+Once distillation is done, the classifier can be trained with the following command:
+```
+python reproduction/train_lbtp.py \
+        --dataset_path data/deeptriage/google_chrome/classifier_data_20.csv \
+        --embedding_model_weights output/lbtp_gc_base.pt \
+        --block 9 \
+        --output_model_weights output/lbtp_gc.pt \
+        --run_name lbpt_gc \
+        --wandb_project wandb_project_name
+```
+### DBRNN-A
+
 
 ## Build Docker Image
 To build the Docker image for Triager X, run the following command:
