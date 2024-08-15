@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import Any, Dict
 
 import numpy as np
@@ -45,6 +46,11 @@ class RecommendationService:
 
     def _initialize_triager(self):
         logger.debug("Initializing Triager X engine...")
+        train_data = pd.read_csv(self._config["data"]["train_data"])
+        developer_id_map = pd.Series(
+            train_data["owner_id"].values, index=train_data["owner"]
+        ).to_dict()
+
         self.triager = TriagerX(
             component_prediction_model=self._component_model,
             developer_prediction_model=self._developer_model,
@@ -52,9 +58,9 @@ class RecommendationService:
             train_data=pd.read_csv(self._config["data"]["train_data"]),
             train_embeddings=self._config["similarity_model"]["embeddings_path"],
             issues_path=self._config["data"]["issues_path"],
-            developer_id_map=self._config["developer_id_map"],
+            developer_id_map=developer_id_map,
             component_id_map=self._config["component_id_map"],
-            expected_developers=set(self._config["developer_id_map"].keys()),
+            expected_developers=set(developer_id_map.keys()),
             device=self._device,
             similarity_prediction_weight=self._config["contribution_score_params"][
                 "similarity_prediction_weight"
@@ -71,6 +77,10 @@ class RecommendationService:
             discussion_score=self._config["contribution_score_params"][
                 "discussion_score"
             ],
+            train_checkpoint_date=datetime.strptime(
+                self._config["contribution_score_params"]["train_checkpoint_date"],
+                "%Y-%m-%d",
+            ),
         )
 
     def _load_trained_model(self, model_config: Dict):
