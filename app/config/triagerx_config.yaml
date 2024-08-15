@@ -8,15 +8,15 @@ similarity_model:
 
 component_model:
   config:
-    model_key: "triagerx"
-    base_models: ["microsoft/deberta-base", "roberta-base"]
+    model_key: "cnn-transformer"
+    base_models: ["microsoft/deberta-base"]
     output_size: 6
     unfrozen_layers: 3
     num_classifiers: 3
     dropout: 0.2
     max_tokens: 256
     num_filters: 256
-  weights_path: "app/saved_states/component_triagerx_u3_6_classes_seed42.pt"
+  weights_path: "app/saved_states/component_deberta-base_u3_6_classes_seed42.pt"
 
 developer_model:
   config:
@@ -40,27 +40,8 @@ contribution_score_params:
   discussion_score: 0
 
 data:
-  issues_path: "app/app_data/openj9_issue_data_6_7_24"
-  train_data: "app/app_data/openj9_train_17_devs.csv"
-
-developer_id_map:
-  adambrousseau: 0
-  amicic: 1
-  babsingh: 2
-  chengjin01: 3
-  dmitripivkine: 4
-  fengxue-is: 5
-  gacholio: 6
-  hangshao0: 7
-  jasonfengj9: 8
-  keithc-ca: 9
-  linhu2016: 10
-  llxia: 11
-  longyuzhang: 12
-  pshipton: 13
-  tajila: 14
-  thallium: 15
-  theresa-m: 16
+  issues_path: "app/app_data/issue_data"
+  train_data: "app/app_data/openj9_train_17.csv"
 
 component_id_map:
   comp:build: 0

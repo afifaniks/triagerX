@@ -30,7 +30,7 @@ tokenizer/deeptriage/tokenizer.json
 tokenizer/deeptriage/vocab.json
 .nfs*
 grid_reports/*
-app/app_data/openj9_issue_data*
+app/app_data/*
 artifacts/
 old_data/*
 training/reports/*
