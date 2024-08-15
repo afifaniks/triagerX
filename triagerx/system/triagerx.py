@@ -32,6 +32,7 @@ class TriagerX:
         direct_assignment_score: float,
         contribution_score: float,
         discussion_score: float,
+        train_checkpoint_date: datetime,
     ) -> None:
         self._component_prediction_model = component_prediction_model.to(device)
         self._developer_prediction_model = developer_prediction_model.to(device)
@@ -51,6 +52,7 @@ class TriagerX:
         self._id2developer_map = {idx: dev for dev, idx in developer_id_map.items()}
         self._id2component_map = {idx: comp for comp, idx in component_id_map.items()}
         self._all_embeddings = np.load(train_embeddings)
+        self._train_checkpoint_date = train_checkpoint_date
         logger.debug(f"Using device: {device}")
         logger.debug("Loading embeddings for existing issues...")
 
@@ -69,7 +71,7 @@ class TriagerX:
             issue (str): The issue for which recommendations are to be generated.
             k_comp (int): The number of top components to recommend.
             k_dev (int): The number of top developers to recommend.
-            k_rank (int): The number of top ranked developers by similarity to consider.
+            k_rank (int): The number of top ranked issues by similarity to consider.
             similarity_threshold (float): The threshold for developer similarity scores.
 
         Returns:
@@ -193,7 +195,7 @@ class TriagerX:
         Args:
             issue (str): The issue for which similarity recommendations are to be generated.
             predicted_components_name (List[str]): List of predicted component names.
-            k_rank (int): The number of top ranked developers by similarity to consider.
+            k_rank (int): The number of top ranked issues by similarity to consider.
             similarity_threshold (float): The threshold for developer similarity scores.
 
         Returns:
@@ -351,7 +353,7 @@ class TriagerX:
             return 1
 
         contribution_date = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-        days_since_contribution = (datetime.now() - contribution_date).days
+        days_since_contribution = (self._train_checkpoint_date - contribution_date).days
         return math.exp(-self._time_decay_factor * days_since_contribution)
 
     def _get_contribution_data(
