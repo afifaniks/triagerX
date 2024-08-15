@@ -159,8 +159,8 @@ for idx, dev in enumerate(train_owners):
 df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
 df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
 
-df_train.to_csv("openj9_train_x.csv")
-df_test.to_csv("openj9_test_x.csv")
+df_train.to_csv(f"openj9_train_{len(train_owners)}.csv")
+df_test.to_csv(f"openj9_test_{len(train_owners)}.csv")
 
 # assert set(df_train.owner.unique()) == set(df_test.owner.unique())
 
