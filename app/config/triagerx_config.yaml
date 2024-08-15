@@ -31,13 +31,14 @@ developer_model:
   weights_path: "app/saved_states/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
 
 contribution_score_params:
-  maximum_similar_issues: 20
-  similarity_prediction_weight: 0.6
+  maximum_similar_issues: 15
+  similarity_prediction_weight: 0.7
   similarity_threshold: 0.6
   time_decay_factor: 0.01
   direct_assignment_score: 0.5
-  contribution_score: 1.0
-  discussion_score: 0
+  contribution_score: 1.5
+  discussion_score: 0.1
+  train_checkpoint_date: "2024-08-12"
 
 data:
   issues_path: "app/app_data/issue_data"
