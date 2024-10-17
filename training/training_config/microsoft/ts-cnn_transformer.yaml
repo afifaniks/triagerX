@@ -1,6 +1,6 @@
 use_description: true
 base_transformer_models: 
- - "microsoft/deberta-large"
+ - "microsoft/codebert-base"
 model_key: "cnn-transformer"
 unfrozen_layers: -1
 num_classifiers: 1
@@ -17,7 +17,7 @@ topk_indices:
   - 5
   - 10
   - 20
-run_name: "ts_cnn_deberta-large_u3_40_classes_last_dev"
+run_name: "ts_cnn_codebert_40_classes_last_dev"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/typescript"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "microsoft-ts"
