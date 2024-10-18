@@ -74,10 +74,10 @@ distill_dataloader = DataLoader(dataset, shuffle=True, batch_size=10)
 
 
 # LR is set to 1e-5 (It is assumed as no reference to LR for distillation training)
-optimizer = torch.optim.Adam(student_model.parameters(), lr=1e-5)
+optimizer = torch.optim.Adam(student_model.parameters(), lr=1e-4)
 
 
-num_epochs = 2
+num_epochs = 3
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Device: {device}")
