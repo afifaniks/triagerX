@@ -16,21 +16,21 @@ if [ "$CONFIG_PARAM" == "triagerx" ]; then
     echo "Running Typescript (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_typescript.py \
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/microsoft/ts-triagerx.yaml \
-        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript_last.csv \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_bug_data.csv \
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "cnn" ]; then
     echo "Running Typescript (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_typescript.py \
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/microsoft/ts-cnn_transformer.yaml \
-        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript_last.csv \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_bug_data.csv \
         --seed 42
 
 elif [ "$CONFIG_PARAM" == "fcn" ]; then
     echo "Running Typescript (Triagerx Model) configuration"
     python /home/mdafifal.mamun/notebooks/triagerX/training/developer/developer_training_typescript.py \
         --config /home/mdafifal.mamun/notebooks/triagerX/training/training_config/microsoft/ts-fcn_transformer.yaml \
-        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript_last.csv \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_bug_data.csv \
         --seed 42
 
 else

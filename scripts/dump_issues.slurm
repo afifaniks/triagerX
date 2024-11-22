@@ -10,6 +10,6 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate triagerx
 python /home/mdafifal.mamun/notebooks/triagerX/util/issue_dump.py \
-    --path /home/mdafifal.mamun/notebooks/triagerX/data/pytorch \
-    --owner pytorch \
-    --repo pytorch
+    --path /home/mdafifal.mamun/notebooks/triagerX/data/openj9/issue_data \
+    --owner eclipse-openj9 \
+    --repo openj9

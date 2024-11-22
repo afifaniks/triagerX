@@ -5,7 +5,7 @@ then
     partition="disa"
 elif [ "$1" = "cpu" ]
 then
-    partition="cpu2019-bf05"
+    partition="cpu2017-bf05"
 else
     echo "Invalid argument. Usage: $0 gpu|cpu [partition]"
     exit 1
