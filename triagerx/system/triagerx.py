@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -129,6 +130,9 @@ class TriagerX:
             "similar_score": normalized_similarity_score[:k_dev],
             "combined_ranking": aggregated_rank,
             "combined_ranking_score": aggregated_prediction_score,
+            "borda_ranking": self._aggregate_borda_ranking(
+                [topk_predicted_developers_name, similarity_devs]
+            ),
         }
 
         return recommendations
@@ -241,6 +245,18 @@ class TriagerX:
             )
 
         return dev_prediction_score
+
+    def _aggregate_borda_ranking(self, rank_lists):
+        borda_scores = defaultdict(int)
+
+        for rank_list in rank_lists:
+            # Assign Borda scores to items based on their rank in each list
+            for i, item in enumerate(rank_list):
+                borda_scores[item] += len(rank_list) - i
+
+        sorted_items = sorted(borda_scores.items(), key=lambda x: x[1], reverse=True)
+
+        return [item[0] for item in sorted_items]
 
     def _aggregate_rankings(
         self,
