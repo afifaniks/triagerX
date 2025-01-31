@@ -31,28 +31,32 @@ target_components = sorted(target_components)
 
 
 # PAPER CONFIG
-# df_train = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_train.csv"
-# )
-# df_test = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_test.csv"
-# )
-# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50.csv"
-# developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
-# component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_triagerx_u3_6_classes_seed42.pt"
-# train_embeddings_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9_embeddings/embeddings_50devs.npy"
-# MAX_K = 20
+df_train = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+)
+df_test = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+)
+output_file = (
+    "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final.csv"
+)
+developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
+train_embeddings_path = (
+    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+)
+MAX_K = 20
 
 # IBM CONFIG
-df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17.csv")
-df_test = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_test_17.csv")
-output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_ibm.csv"
-developer_model_weights = "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
-component_model_weights = "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/component_deberta-base_u3_6_classes_seed42.pt"
-train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/train_embeddings.npy"
-)
-MAX_K = 15
+# df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17.csv")
+# df_test = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_test_17.csv")
+# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_ibm.csv"
+# developer_model_weights = "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/triagerx_ensemble_u3_last_devs_17devs_seed42.pt"
+# component_model_weights = "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/component_deberta-base_u3_6_classes_seed42.pt"
+# train_embeddings_path = (
+#     "/home/mdafifal.mamun/notebooks/triagerX/app/saved_states/train_embeddings.npy"
+# )
+# MAX_K = 15
 
 df_train["owner"] = df_train.owner.apply(lambda x: x.lower())
 df_test["owner"] = df_test.owner.apply(lambda x: x.lower())
@@ -80,7 +84,7 @@ for i, comp in enumerate(target_components):
     comp_lbl2id[comp] = i
 
 base_transformer_models = ["microsoft/deberta-base", "roberta-base"]
-
+device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.debug("Modeling network...")
 dev_model = ModelFactory.get_model(
     model_key="triagerx",
@@ -93,7 +97,12 @@ dev_model = ModelFactory.get_model(
     label_map=idx2lbl,
 )
 
-dev_model.load_state_dict(torch.load(developer_model_weights))
+dev_model.load_state_dict(
+    torch.load(
+        developer_model_weights,
+        map_location=device,
+    )
+)
 
 
 comp_model = ModelFactory.get_model(
@@ -106,7 +115,12 @@ comp_model = ModelFactory.get_model(
     max_tokens=256,
     label_map=comp_id2label,
 )
-comp_model.load_state_dict(torch.load(component_model_weights))
+comp_model.load_state_dict(
+    torch.load(
+        component_model_weights,
+        map_location=device,
+    )
+)
 
 
 logger.debug("Generating embeddings...")
@@ -134,12 +148,14 @@ def get_topk_score(recommendations, top_k):
     combined_total = 0
     dl_total = 0
     sim_total = 0
+    borda_total = 0
 
     for idx in range(len(df_test)):
         actual = df_test.iloc[idx]["owner"]
         combined_recommended = recommendations[idx]["combined_ranking"][:top_k]
         dl_recommended = recommendations[idx]["predicted_developers"][:top_k]
         sim_recommended = recommendations[idx]["similar_devs"][:top_k]
+        borda_recommended = recommendations[idx]["borda_ranking"][:top_k]
 
         if actual in combined_recommended:
             combined_total += 1
@@ -150,10 +166,14 @@ def get_topk_score(recommendations, top_k):
         if actual in sim_recommended:
             sim_total += 1
 
+        if actual in borda_recommended:
+            borda_total += 1
+
     return (
         dl_total / len(df_test),
         sim_total / len(df_test),
         combined_total / len(df_test),
+        borda_total / len(df_test),
     )
 
 
@@ -179,7 +199,7 @@ def evaluate_recommendations(params):
         component_id_map=comp_lbl2id,
         expected_developers=expected_users,
         train_data=df_train,
-        device="cuda",
+        device=device,
         similarity_prediction_weight=similarity_prediction_weight,
         time_decay_factor=time_decay_factor,
         direct_assignment_score=direct_assignment_score,
@@ -215,12 +235,12 @@ def evaluate_recommendations(params):
 # }
 
 parameter_ranges = {
-    "similarity_prediction_weight": [0.7],
+    "similarity_prediction_weight": [0.65],
     "time_decay_factor": [0.01],
     "direct_assignment_score": [0.5],
     "contribution_score": [1.5],
-    "discussion_score": [0.1],
-    "similarity_threshold": [0.6],
+    "discussion_score": [0.2],
+    "similarity_threshold": [0.4],
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))
@@ -257,18 +277,23 @@ for params in itertools.product(*parameter_ranges.values()):
         "T1DL": top_1[0],
         "T1Sim": top_1[1],
         "T1Com": top_1[2],
+        "T1Borda": top_1[3],
         "T3DL": top_3[0],
         "T3Sim": top_3[1],
         "T3Com": top_3[2],
+        "T3Borda": top_3[3],
         "T5DL": top_5[0],
         "T5Sim": top_5[1],
         "T5Com": top_5[2],
+        "T5Borda": top_5[3],
         "T10DL": top_10[0],
         "T10Sim": top_10[1],
         "T10Com": top_10[2],
+        "T10Borda": top_10[3],
         "T20DL": top_20[0],
         "T20Sim": top_20[1],
         "T20Com": top_20[2],
+        "T20Borda": top_20[3],
     }
 
     logger.info(f"Result: {result}")
