@@ -1,23 +1,19 @@
 import json
 import os
+import re
 import time
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 tqdm.pandas()
-
-import re
-
-# %%
-# Filter stopwords
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
-
 stop_words = set(stopwords.words("english"))
 stemmer = PorterStemmer()
 
@@ -60,8 +56,14 @@ def preprocess_text(text: str) -> str:
 
 
 max_seq_length = 64
-dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_08122024.csv"
+print("Max sequence length:", max_seq_length)
+dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_bug_data.csv"
+issue_path = "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/issue_data"
 
+# dataset_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_08122024.csv"
+# issue_path = "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/issue_data"
+
+mu = 0.4
 df = pd.read_csv(dataset_path)
 df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
 
@@ -70,16 +72,18 @@ df.head()
 
 # %%
 df["text"] = df.apply(lambda row: f"{row['issue_title']}\n{row['description']}", axis=1)
+df["labels"] = df["labels"].apply(lambda x: str(x).split(",") if x else [])
 
 df = df.sort_values(by="issue_number")
 df = df[df["owner"].notna()]
+df["owner"] = df["owner"].apply(lambda x: str(x).strip().lower())
 test_size = 0.1
 
 num_issues = len(df)
 print(f"Total number of issues after processing: {num_issues}")
+print("All owners:", df["owner"].unique())
 
 df = df.sort_values(by="issue_number")
-
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
 sample_threshold = 20
@@ -101,11 +105,6 @@ print(f"Train dataset size: {len(df_train)}")
 print(f"Test dataset size: {len(df_test)}")
 
 
-from collections import Counter
-
-import numpy as np
-
-
 def compute_term_frequencies(reports):
     """Compute term frequency for each report"""
     term_frequencies = []
@@ -115,7 +114,7 @@ def compute_term_frequencies(reports):
 
 
 # %%
-all_bug_reports = [
+all_train_bug_reports = [
     preprocess_text(text)[:max_seq_length] for text in df_train.text.tolist()
 ]
 
@@ -131,10 +130,10 @@ def create_report_counts(reports):
 
 
 # %%
-all_reports_counts = create_report_counts(all_bug_reports)
+all_train_reports_counts = create_report_counts(all_train_bug_reports)
 
 # %%
-vocabulary = set([word for report in all_bug_reports for word in report])
+vocabulary = set([word for report in all_train_bug_reports for word in report])
 
 
 def precompute_collection_probabilities(all_reports_counts, vocabulary):
@@ -186,7 +185,7 @@ def kl_divergence(report_q_probs, report_k_probs):
 
 # %%
 collection_probabilities = precompute_collection_probabilities(
-    all_reports_counts, vocabulary
+    all_train_reports_counts, vocabulary
 )
 
 # %%
@@ -195,10 +194,20 @@ all_test_reports = [
 ]
 
 
+report_k_probs_list = []
+print("Computing all report probabilities...")
+for i, report_k_counts in enumerate(all_train_reports_counts):
+    report_k_probs = {}
+    for word in vocabulary:
+        report_k_probs[word] = smoothed_unigram(
+            word, report_k_counts, collection_probabilities, vocabulary, mu
+        )
+    report_k_probs_list.append(report_k_probs)
+
+
 # %%
 def get_kl_scores(query_report):
     query_report_counts = Counter(query_report)
-    mu = 0.5
     kl_scores = []
 
     query_report_probs = {}
@@ -207,19 +216,21 @@ def get_kl_scores(query_report):
             word, query_report_counts, collection_probabilities, vocabulary, mu
         )
 
-    for i, report_k_counts in enumerate(all_reports_counts):
-        report_k_probs = {}
-        for word in vocabulary:
-            report_k_probs[word] = smoothed_unigram(
-                word, report_k_counts, collection_probabilities, vocabulary, mu
-            )
+        # for i, report_k_counts in enumerate(all_reports_counts):
+        #     report_k_probs = {}
+        #     for word in vocabulary:
+        #         report_k_probs[word] = smoothed_unigram(
+        #             word, report_k_counts, collection_probabilities, vocabulary, mu
+        #         )
 
+    for report_k_probs in report_k_probs_list:
         kl = kl_divergence(query_report_probs, report_k_probs)
         kl_scores.append(kl)
 
     return kl_scores
 
 
+@lru_cache(maxsize=50000)
 def get_contribution_data(issue_number: int):
     """
     Retrieves the contribution data for a given issue number.
@@ -235,9 +246,7 @@ def get_contribution_data(issue_number: int):
     last_assignment = None
 
     with open(
-        os.path.join(
-            "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/issue_data", issue_file
-        ),
+        os.path.join(issue_path, issue_file),
         "r",
     ) as file:
         issue = json.load(file)
@@ -257,7 +266,7 @@ def get_contribution_data(issue_number: int):
             if not actor:
                 continue
 
-            actor = actor.get("login")
+            actor = actor.get("login").lower()
 
             if event == "cross-referenced" and timeline_event["source"].get(
                 "issue", {}
@@ -278,10 +287,6 @@ def get_contribution_data(issue_number: int):
         )
 
     return contributions
-
-
-# %%
-from collections import defaultdict
 
 
 def construct_mdn(reports, developers, df_train):
@@ -384,7 +389,18 @@ def generate_prediction_score(ranks):
 ranks = []
 
 total_start_time = time.time()
-for bug_id in range(len(df_test)):
+
+samples = 50
+print("Number of samples:", samples)
+
+# Set seed
+np.random.seed(42)
+
+for bug_id in tqdm(
+    np.random.choice(range(len(df_test)), samples, replace=False),
+    total=samples,
+    desc="Predicting",
+):
     print("Predicting for bug_id:", bug_id)
     start_time = time.time()
     query_report = all_test_reports[bug_id]
@@ -392,14 +408,26 @@ for bug_id in range(len(df_test)):
     kl_start_time = time.time()
     kl_scores = get_kl_scores(query_report)
     kl_scores = dict(zip(df_train.issue_number.tolist(), kl_scores))
-    top_similar_issues = sorted(kl_scores.items(), key=lambda x: x[1])[:20]
+    top_similar_issues = sorted(kl_scores.items(), key=lambda x: x[1])[:30]
     print("KL Time taken:", time.time() - kl_start_time)
 
     # Check if component is not null
-    query_component = df_test.iloc[bug_id]["component"]
+    # Openj9
+    # query_component = df_test.iloc[bug_id]["component"]
+    # similar_component_issues = None
+    # if not pd.isnull(query_component):
+    #     similar_component_issues = df_train[df_train["component"] == query_component]
+
+    # Typescript
+    query_component = df_test.iloc[bug_id]["labels"]
     similar_component_issues = None
-    if not pd.isnull(query_component):
-        similar_component_issues = df_train[df_train["component"] == query_component]
+    if len(query_component) > 0:
+        # If any of the labels in the query_component is in the labels of the training data
+        similar_component_issues = df_train[
+            df_train["labels"].apply(lambda x: bool(set(x) & set(query_component)))
+        ]
+        # Select last 100 issues from dataframe
+        similar_component_issues = similar_component_issues[-30:]
 
     developer_set = set()
     similar_issue_set = set()
