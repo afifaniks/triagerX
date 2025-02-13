@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -17,12 +18,14 @@ from triagerx.model.prediction_model import PredictionModel
 class TriagerX:
     def __init__(
         self,
+        component_prediction_model: PredictionModel,
         developer_prediction_model: PredictionModel,
         similarity_model: nn.Module,
         train_data: pd.DataFrame,
         train_embeddings: str,
         issues_path: str,
         developer_id_map: Dict[str, int],
+        component_id_map: Dict[str, int],
         expected_developers: Set[str],
         device: str,
         similarity_prediction_weight: float,
@@ -30,7 +33,9 @@ class TriagerX:
         direct_assignment_score: float,
         contribution_score: float,
         discussion_score: float,
+        train_checkpoint_date: datetime,
     ) -> None:
+        self._component_prediction_model = component_prediction_model.to(device)
         self._developer_prediction_model = developer_prediction_model.to(device)
         self._similarity_model = similarity_model
         self._device = device
@@ -43,31 +48,42 @@ class TriagerX:
         self._issues_path = issues_path
         self._all_issues = os.listdir(issues_path)
         self._developer2id_map = developer_id_map
+        self._component2id_map = component_id_map
         self._expected_developers = expected_developers
         self._id2developer_map = {idx: dev for dev, idx in developer_id_map.items()}
+        self._id2component_map = {idx: comp for comp, idx in component_id_map.items()}
         self._all_embeddings = np.load(train_embeddings)
+        self._train_checkpoint_date = train_checkpoint_date
         logger.debug(f"Using device: {device}")
         logger.debug("Loading embeddings for existing issues...")
 
     def get_recommendation(
         self,
         issue: str,
+        k_comp: int,
         k_dev: int,
         k_rank: int,
         similarity_threshold: float,
     ) -> Dict[str, List]:
         """
-        Generates recommendations for and developers based on the given issue.
+        Generates recommendations for components and developers based on the given issue.
 
         Args:
             issue (str): The issue for which recommendations are to be generated.
+            k_comp (int): The number of top components to recommend.
             k_dev (int): The number of top developers to recommend.
-            k_rank (int): The number of top ranked developers by similarity to consider.
+            k_rank (int): The number of top ranked issues by similarity to consider.
             similarity_threshold (float): The threshold for developer similarity scores.
 
         Returns:
-            Dict[str, List]: A dictionary containing recommended developers, and their scores.
+            Dict[str, List]: A dictionary containing recommended components, developers, and their scores.
         """
+        predicted_components_name, comp_prediction_score = self._predict_components(
+            issue, k_comp
+        )
+
+        logger.debug(f"Predicted components: {predicted_components_name}")
+        logger.debug(f"Component prediction Score: {comp_prediction_score}")
 
         all_dev_prediction_scores = self._predict_developers(issue)
 
@@ -106,15 +122,50 @@ class TriagerX:
         logger.debug(f"Aggregated Score: {aggregated_prediction_score}")
 
         recommendations = {
+            "predicted_components": predicted_components_name,
+            "comp_prediction_score": comp_prediction_score,
             "predicted_developers": topk_predicted_developers_name,
             "dev_prediction_score": topk_dev_prediction_score,
             "similar_devs": similarity_devs[:k_dev],
             "similar_score": normalized_similarity_score[:k_dev],
             "combined_ranking": aggregated_rank,
             "combined_ranking_score": aggregated_prediction_score,
+            "borda_ranking": self._aggregate_borda_ranking(
+                [topk_predicted_developers_name, similarity_devs]
+            ),
         }
 
         return recommendations
+
+    def _predict_components(self, issue: str, k: int) -> Tuple[List[str], List[float]]:
+        """
+        Predicts components related to the given issue.
+
+        Args:
+            issue (str): The issue for which components are to be predicted.
+            k (int): The number of top components to recommend.
+
+        Returns:
+            Tuple[List[str], List[float]]: A tuple containing a list of predicted component names and their prediction scores.
+        """
+        self._component_prediction_model.eval()
+        with torch.no_grad():
+            tokenized_issue = self._component_prediction_model.tokenize_text(issue)
+            predictions = self._component_prediction_model(tokenized_issue)
+
+        output = torch.sum(torch.stack(predictions), 0)
+        output = self._normalize_tensor(output.squeeze(dim=0))
+        prediction_score, predicted_components = output.topk(k, 0, True, True)
+        predicted_components = (
+            predicted_components.squeeze(dim=0).cpu().numpy().tolist()
+        )
+
+        predicted_components_name = [
+            self._id2component_map[idx] for idx in predicted_components
+        ]
+        prediction_score = prediction_score.squeeze(dim=0).cpu().numpy().tolist()
+
+        return predicted_components_name, prediction_score
 
     def _predict_developers(self, issue: str) -> np.ndarray:
         """
@@ -147,7 +198,8 @@ class TriagerX:
 
         Args:
             issue (str): The issue for which similarity recommendations are to be generated.
-            k_rank (int): The number of top ranked developers by similarity to consider.
+            predicted_components_name (List[str]): List of predicted component names.
+            k_rank (int): The number of top ranked issues by similarity to consider.
             similarity_threshold (float): The threshold for developer similarity scores.
 
         Returns:
@@ -193,6 +245,18 @@ class TriagerX:
             )
 
         return dev_prediction_score
+
+    def _aggregate_borda_ranking(self, rank_lists):
+        borda_scores = defaultdict(int)
+
+        for rank_list in rank_lists:
+            # Assign Borda scores to items based on their rank in each list
+            for i, item in enumerate(rank_list):
+                borda_scores[item] += len(rank_list) - i
+
+        sorted_items = sorted(borda_scores.items(), key=lambda x: x[1], reverse=True)
+
+        return [item[0] for item in sorted_items]
 
     def _aggregate_rankings(
         self,
@@ -291,17 +355,6 @@ class TriagerX:
             return self._direct_assignment_score
         return self._discussion_score
 
-    def piecewise_decay_function(
-        self, days, slow_decay_rate, fast_decay_rate, threshold_days
-    ):
-
-        if days <= threshold_days:
-            return np.exp(-slow_decay_rate * days)
-        else:
-            return np.exp(-slow_decay_rate * threshold_days) * np.exp(
-                -fast_decay_rate * (days - threshold_days)
-            )
-
     def _calculate_time_decay(self, created_at: Optional[str]) -> float:
         """
         Calculates the time decay factor for a given creation time.
@@ -316,14 +369,7 @@ class TriagerX:
             return 1
 
         contribution_date = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
-        days_since_contribution = (datetime(2024, 7, 3) - contribution_date).days
-
-        # return self.piecewise_decay_function(
-        #     days_since_contribution,
-        #     self._time_decay_factor / 10,
-        #     self._time_decay_factor,
-        #     180,
-        # )
+        days_since_contribution = (self._train_checkpoint_date - contribution_date).days
         return math.exp(-self._time_decay_factor * days_since_contribution)
 
     def _get_contribution_data(
