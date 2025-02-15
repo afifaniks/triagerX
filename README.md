@@ -2,6 +2,8 @@
 
 TriagerX is a novel triaging framework designed to streamline the process of handling GitHub issues. By analyzing the title and description of a GitHub issue, and using two rankers (1) TriagerX Content-based Ranker (CBR), (2) TriagerX Interaction-based Ranker (IBR), TriagerX recommends the most appropriate developers to address the issue. This tool can significantly reduce the time and effort needed to manage and assign issues in software projects. In this README, we provide extensive guidelines on how to get TriagerX up and running.
 
+## Experimental Results
+This [**document/appendix**](Appendices.pdf) contains a detailed overview of baselines, benchmark datasets, pre-trained language models used in this study, and developer recommendation accuracy of TriagerX and its components compared to all baselines.
 
 ## Environmental Setup
 Create a new `conda` environment by executing the following command:
