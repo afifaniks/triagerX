@@ -1,29 +1,28 @@
 use_description: true
 base_transformer_models: 
  - "microsoft/deberta-base"
- - "roberta-base"
+ - "microsoft/codebert-base"
 model_key: "triagerx"
 unfrozen_layers: 3
 num_classifiers: 3
 total_folds: 10
 fold_number: 9
 val_size: 0.2
-test_size: 0.1
+test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
 epochs: 20
-batch_size: 20
-max_tokens: 128
-early_stopping_patience: null
+batch_size: 10
+max_tokens: 256
+early_stopping_patience: 5
 topk_indices:
-  - 1
   - 3
   - 5
   - 10
   - 20
-run_name: "triagerx_ensemble_dt_mf_th20_test"
+run_name: "triagerx_gc_ensemble_deberta-base_codebert-base"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
-wandb_project: "mozilla_firefox"
+wandb_project: "google_chromium"
 architecture: "TriagerxDevModel"
 dataset: "Deeptriage Issues"

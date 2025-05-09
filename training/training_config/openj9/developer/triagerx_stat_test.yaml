@@ -1,0 +1,28 @@
+use_description: true
+model1_transformer_models: 
+ - "microsoft/deberta-base"
+ - "roberta-base"
+model2_transformer_models:
+  - "roberta-large"
+model1_unfrozen_layers: 3
+model1_num_classifiers: 3
+model2_unfrozen_layers: -1
+model2_num_classifiers: 1
+model1_key: "triagerx"
+model2_key: "cnn-transformer"
+val_size: 0.1
+test_size: 0.1
+model1_dropout: 0.2
+model2_dropout: 0.2
+batch_size: 10
+model1_max_tokens: 256
+model2_max_tokens: 256
+early_stopping_patience: null
+topk_indices:
+  - 1
+  - 3
+  - 5
+  - 10
+  - 20
+model1_path: "/work/disa_lab/projects/triagerx/models/openj9/openj9_triagerx_u3c3_50_classes_last_dev_seed42.pt"
+model2_path: "/work/disa_lab/projects/triagerx/models/openj9/openj9_cnn_roberta-large-full_u3_50_classes_last_dev_seed42.pt"

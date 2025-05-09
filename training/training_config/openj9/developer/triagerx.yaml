@@ -1,7 +1,7 @@
 use_description: true
 base_transformer_models: 
- - "microsoft/deberta-base"
  - "roberta-base"
+ - "microsoft/codebert-base"
 unfrozen_layers: 3
 num_classifiers: 3
 val_size: 0.1
@@ -18,7 +18,7 @@ topk_indices:
   - 10
   - 20
 model_key: "triagerx"
-run_name: "openj9_triagerx_ensemble_u3_15_classes_last_dev"
+run_name: "openj9_triagerx_different_models_roberta_base_and_codebert_base"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "openj9-developers"
