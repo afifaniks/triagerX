@@ -390,11 +390,13 @@ ranks = []
 
 total_start_time = time.time()
 
-samples = 50
+samples = 200
+seed_value = 77
 print("Number of samples:", samples)
 
 # Set seed
-np.random.seed(42)
+np.random.seed(seed_value)
+print("Seed value:", seed_value)
 
 for bug_id in tqdm(
     np.random.choice(range(len(df_test)), samples, replace=False),
@@ -413,21 +415,21 @@ for bug_id in tqdm(
 
     # Check if component is not null
     # Openj9
-    # query_component = df_test.iloc[bug_id]["component"]
-    # similar_component_issues = None
-    # if not pd.isnull(query_component):
-    #     similar_component_issues = df_train[df_train["component"] == query_component]
+    query_component = df_test.iloc[bug_id]["component"]
+    similar_component_issues = None
+    if not pd.isnull(query_component):
+        similar_component_issues = df_train[df_train["component"] == query_component]
 
     # Typescript
-    query_component = df_test.iloc[bug_id]["labels"]
-    similar_component_issues = None
-    if len(query_component) > 0:
-        # If any of the labels in the query_component is in the labels of the training data
-        similar_component_issues = df_train[
-            df_train["labels"].apply(lambda x: bool(set(x) & set(query_component)))
-        ]
-        # Select last 100 issues from dataframe
-        similar_component_issues = similar_component_issues[-30:]
+    # query_component = df_test.iloc[bug_id]["labels"]
+    # similar_component_issues = None
+    # if len(query_component) > 0:
+    #     # If any of the labels in the query_component is in the labels of the training data
+    #     similar_component_issues = df_train[
+    #         df_train["labels"].apply(lambda x: bool(set(x) & set(query_component)))
+    #     ]
+    #     # Select last 100 issues from dataframe
+    #     similar_component_issues = similar_component_issues[-20:]
 
     developer_set = set()
     similar_issue_set = set()

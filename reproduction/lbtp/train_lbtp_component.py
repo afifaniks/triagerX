@@ -18,6 +18,7 @@ from tqdm import tqdm
 from transformers import RobertaConfig, RobertaModel, RobertaTokenizer
 
 import wandb
+from triagerx.dataset.text_processor import TextProcessor
 from triagerx.trainer.model_evaluator import ModelEvaluator
 
 parser = argparse.ArgumentParser(description="Script to run model training")
@@ -48,7 +49,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 block = args.block
-run_name = f"{args.run_name}_block{block}"
+run_name = f"{args.run_name}_block{block}_comp6"
 dataset_path = args.dataset_path
 embedding_model_weights_dir = args.embedding_model_weights
 output_model_weights = args.output_model_weights
@@ -63,7 +64,7 @@ class TriageDataset(Dataset):
         df: pd.DataFrame,
         tokenizer: RobertaTokenizer,
         feature: str = "text",
-        target: str = "owner_id",
+        target: str = "component_id",
         max_tokens: int = 256,
     ):
         print("Generating torch dataset...")
@@ -247,7 +248,7 @@ def log_step(
                     | F1-score: {f1_score: .3f}"
 
     print(log)
-    # wandb.log(log_dict)
+    wandb.log(log_dict)
 
 
 def clean_data(df):
@@ -272,8 +273,23 @@ def clean_data(df):
 print("Preparing the dataset...")
 df = pd.read_csv(dataset_path)
 df = df.rename(columns={"assignees": "owner", "issue_body": "description"})
+df = df[df["component"].notna()]
+print(set(df["component"].unique()))
+# df["component"] = df["labels"].apply(TextProcessor.component_split)
+print("Filtering dataset by targetted components...")
+target_components = [
+    "comp:vm",
+    "comp:jit",
+    "comp:jvmti",
+    "comp:jitserver",
+    "comp:jclextensions",
+    "comp:test",
+    "comp:build",
+    "comp:gc",
+    "comp:infra",
+]
+df = df[df["component"].isin(target_components)]
 
-df = df[df["owner"].notna()]
 df = clean_data(df)
 
 print(f"Total number of issues: {len(df)}")
@@ -290,33 +306,65 @@ print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 df_train = sliced_df[: samples_per_block * block]
 df_test = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
 
-sample_threshold = 20
-developers = df_train["owner"].value_counts()
-filtered_developers = developers.index[developers >= sample_threshold]
-df_train = df_train[df_train["owner"].isin(filtered_developers)]
+# sample_threshold = 20
+# developers = df_train["owner"].value_counts()
+# filtered_developers = developers.index[developers >= sample_threshold]
+# df_train = df_train[df_train["owner"].isin(filtered_developers)]
 
-train_owners = set(df_train["owner"])
-test_owners = set(df_test["owner"])
+# train_owners = set(df_train["owner"])
+# test_owners = set(df_test["owner"])
 
-unwanted = list(test_owners - train_owners)
+# unwanted = list(test_owners - train_owners)
 
-df_test = df_test[~df_test["owner"].isin(unwanted)]
+# df_test = df_test[~df_test["owner"].isin(unwanted)]
 
-print(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
-print(f"Number of train developers: {len(df_train.owner.unique())}")
-print(f"Number of test developers: {len(df_test.owner.unique())}")
+# print(f"Training data: {len(df_train)}, Validation data: {len(df_test)}")
+# print(f"Number of train developers: {len(df_train.owner.unique())}")
+# print(f"Number of test developers: {len(df_test.owner.unique())}")
 
-# Label encode developers
+# # Label encode developers
 
-lbl2idx = {}
+# lbl2idx = {}
 
-train_owners = sorted(train_owners)
+# train_owners = sorted(train_owners)
 
-for idx, dev in enumerate(train_owners):
-    lbl2idx[dev] = idx
+# for idx, dev in enumerate(train_owners):
+#     lbl2idx[dev] = idx
 
-df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
-df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
+# df_train["owner_id"] = df_train["owner"].apply(lambda owner: lbl2idx[owner])
+# df_test["owner_id"] = df_test["owner"].apply(lambda owner: lbl2idx[owner])
+
+
+# Generate component ids
+all_components = sorted(list(df_train["component"].unique()))
+label2idx = {}
+idx2labels = {}
+
+for idx, comp in enumerate(all_components):
+    label2idx[comp] = idx
+    idx2labels[idx] = comp
+
+df_train["component_id"] = [
+    label2idx[component] for component in df_train["component"].values
+]
+df_test["component_id"] = [
+    label2idx[component] for component in df_test["component"].values
+]
+
+print("Label to ID:", label2idx)
+# df_train, df_val = train_test_split(
+#     df_train, test_size=val_size, random_state=seed, shuffle=True
+# )
+
+print(f"Final dataset size - Train: {len(df_train)}, Test: {len(df_test)}")
+
+# Assert each data partition has all the required components
+assert set(df_test.component.unique()) == set(df_train.component.unique())
+
+
+class_counts = np.bincount(df_train["component_id"])
+num_samples = sum(class_counts)
+labels = df_train["component_id"].to_list()
 
 print("Load pretrained embedding model")
 model_config = RobertaConfig.from_pretrained("roberta-large")
@@ -329,12 +377,12 @@ print("Loaded weights from the saved state.")
 tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 
 model = LBTPClassifier(
-    embedding_model, output_size=len(df_train.owner_id.unique()), unfrozen_layers=3
+    embedding_model, output_size=len(df_train.component.unique()), unfrozen_layers=3
 )
 learning_rate = 0.00001
 epochs = 20
 batch_size = 10
-topk_indices = [3, 5, 10, 20]
+topk_indices = [1, 2, 3]
 
 wandb_config = {
     "project": args.wandb_project,
@@ -345,7 +393,7 @@ wandb_config = {
         "epochs": epochs,
     },
 }
-# wandb.init(**wandb_config)
+wandb.init(**wandb_config)
 
 criterion = CombineLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
