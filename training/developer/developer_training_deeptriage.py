@@ -156,7 +156,7 @@ labels = df_train["owner_id"].to_list()  # corresponding labels of samples
 
 class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
 weights = [class_weights[labels[i]] for i in range(int(num_samples))]
-sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
+sampler = None  # WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
 
 logger.debug("Modeling network...")
 model = ModelFactory.get_model(

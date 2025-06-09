@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from loguru import logger
-from scipy.stats import ttest_rel
+from scipy.stats import wilcoxon
 from sklearn.metrics import classification_report
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -20,7 +20,9 @@ class StatisticalEvaluator:
         dataloader: DataLoader,
         dataloader2: DataLoader,
         topk_indices: List[int],
-        combined_loss: bool = True,
+        report_file_name: str,
+        combined_loss1: bool,
+        combined_loss2: bool,
     ):
         model = model.to(device)
         model2 = model2.to(device)
@@ -32,8 +34,6 @@ class StatisticalEvaluator:
         all_labels = []
         all_logits1 = []
         all_logits2 = []
-
-        index = 0
 
         with torch.no_grad():
             for (test_input, test_label), (test_input2, test_label2) in tqdm(
@@ -49,15 +49,11 @@ class StatisticalEvaluator:
                 output = model(test_input)
                 output2 = model2(test_input2)
 
-                if combined_loss:
+                if combined_loss1:
                     output = torch.sum(torch.stack(output), 0)
+
+                if combined_loss2:
                     output2 = torch.sum(torch.stack(output2), 0)
-
-                # _, top_k_predictions = output.topk(max(topk_indices), 1, True, True)
-                # _, top_k_predictions2 = output2.topk(max(topk_indices), 1, True, True)
-
-                # top_k_predictions = top_k_predictions.t()
-                # top_k_predictions2 = top_k_predictions2.t()
 
                 all_preds.append(output.argmax(dim=1).cpu().numpy())
                 all_preds2.append(output2.argmax(dim=1).cpu().numpy())
@@ -66,20 +62,25 @@ class StatisticalEvaluator:
                 all_logits1.append(output.cpu().numpy())
                 all_logits2.append(output2.cpu().numpy())
 
-                index += 1
-                if index > 6:
-                    break
-
         # Concatenate full arrays for p-value test
         logits_model1 = np.concatenate(all_logits1, axis=0)
         logits_model2 = np.concatenate(all_logits2, axis=0)
         labels_np = np.concatenate(all_labels, axis=0)
 
         p_values = self.p_value_test(
-            labels_np, logits_model1, logits_model2, topk_indices, subset_size=50
+            labels_np,
+            logits_model1,
+            logits_model2,
+            topk_indices,
+            num_samples=100,
+            subset_size=100,
         )
 
         logger.info(f"P-values from top-k comparison: {p_values}")
+
+        # Write p-values to file
+        self.save_report(p_values, report_file_name)
+        logger.info(f"Saved p-values report to {report_file_name}")
 
     def p_value_test(
         self,
@@ -87,8 +88,8 @@ class StatisticalEvaluator:
         model1_preds,
         model2_preds,
         topk_indices,
-        num_samples=50,
-        subset_size=None,
+        num_samples=100,
+        subset_size=100,
     ):
         """
         Compute p-values comparing top-k accuracies of two models over multiple random subsets.
@@ -110,7 +111,8 @@ class StatisticalEvaluator:
             accs_model1 = []
             accs_model2 = []
 
-            for _ in range(num_samples):
+            for sample_index in range(num_samples):
+                logger.debug(f"Sample index: {sample_index}/{num_samples}")
                 subset_indices = np.random.choice(
                     len(labels), size=subset_size, replace=False
                 )
@@ -121,10 +123,12 @@ class StatisticalEvaluator:
                 acc1 = compute_topk_accuracy(subset_preds1, subset_labels, k)
                 acc2 = compute_topk_accuracy(subset_preds2, subset_labels, k)
 
+                logger.debug(f"Top-{k} accuracy for model1: {acc1}, model2: {acc2}")
+
                 accs_model1.append(acc1)
                 accs_model2.append(acc2)
 
-            t_stat, p_val = ttest_rel(accs_model1, accs_model2)
+            t_stat, p_val = wilcoxon(accs_model1, accs_model2)
             p_values[k] = p_val
 
         return p_values

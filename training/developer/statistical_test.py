@@ -90,15 +90,17 @@ df = TextProcessor.prepare_dataframe(
     use_summary=False,
     use_description=use_description,
     component_training=False,
+    is_openj9=True if "openj9" in dataset_path else False,
 )
 
-df = df.sort_values(by="issue_number")
 df = df[df["owner"].notna()]
 
 num_issues = len(df)
 logger.info(f"Total number of issues after processing: {num_issues}")
 
-df = df.sort_values(by="issue_number")
+if "openj9" in dataset_path:
+    print("Sorting issues by issue number...")
+    df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
@@ -169,7 +171,8 @@ model2 = ModelFactory.get_model(
     label_map=idx2lbl,
 )
 
-criterion = CrossEntropyLoss() if model1_key == "fcn-transformer" else CombinedLoss()
+combined_loss1 = False if model1_key == "fcn-transformer" else True
+combined_loss2 = False if model2_key == "fcn-transformer" else True
 
 val_ds = DatasetFactory.get_dataset(
     df_test, model, "text", "owner_id", max_length=model1_max_tokens
@@ -187,6 +190,11 @@ logger.info("Starting testing...")
 model.load_state_dict(torch.load(model1_path, map_location=device))
 model2.load_state_dict(torch.load(model2_path, map_location=device))
 
+m1 = model1_path.split("/")[-1].split(".")[0]
+m2 = model2_path.split("/")[-1].split(".")[0]
+report_file_name = f"statistical_test_report_{m1}_AND_{m2}.json"
+logger.info(f"Report file name: {report_file_name}")
+
 model_evaluator = StatisticalEvaluator()
 model_evaluator.evaluate(
     model=model,
@@ -195,6 +203,8 @@ model_evaluator.evaluate(
     dataloader2=val_dataloader2,
     device=device,
     topk_indices=topk_indices,
-    combined_loss=False if model1_key == "fcn-transformer" else True,
+    report_file_name=report_file_name,
+    combined_loss1=combined_loss1,
+    combined_loss2=combined_loss2,
 )
 logger.info("Finished testing.")

@@ -47,6 +47,7 @@ with open(args.config, "r") as stream:
 dataset_path = args.dataset_path
 seed = args.seed
 
+logger.debug(f"Config\n=========================\n{config}\n=========================\n")
 use_description = config.get("use_description")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
@@ -154,6 +155,7 @@ labels = df_train["owner_id"].to_list()  # corresponding labels of samples
 class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
 weights = [class_weights[labels[i]] for i in range(int(num_samples))]
 sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
+sampler = None
 
 logger.debug("Modeling network...")
 model = ModelFactory.get_model(

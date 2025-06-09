@@ -30,22 +30,37 @@ target_components = [
 target_components = sorted(target_components)
 
 
-# PAPER CONFIG
+# TS
 df_train = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_train.csv"
 )
 df_test = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_test.csv"
 )
-output_file = (
-    "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final.csv"
-)
-developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/ts_grid_search_50_final_sim_threshold.csv"
+developer_model_weights = "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42.pt"
 component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
 train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/embeddings_40devs.npy"
 )
 MAX_K = 20
+
+# PAPER CONFIG
+# df_train = pd.read_csv(
+#     "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+# )
+# df_test = pd.read_csv(
+#     "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+# )
+# output_file = (
+#     "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final.csv"
+# )
+# developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+# component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
+# train_embeddings_path = (
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+# )
+# MAX_K = 20
 
 # IBM CONFIG
 # df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17.csv")
@@ -193,7 +208,7 @@ def evaluate_recommendations(params):
         component_prediction_model=comp_model,
         developer_prediction_model=dev_model,
         similarity_model=similarity_model,
-        issues_path="/home/mdafifal.mamun/notebooks/triagerX/app/app_data/issue_data",
+        issues_path="/home/mdafifal.mamun/notebooks/triagerX/data/typescript/issue_data",
         train_embeddings=train_embeddings_path,
         developer_id_map=lbl2idx,
         component_id_map=comp_lbl2id,
@@ -205,7 +220,7 @@ def evaluate_recommendations(params):
         direct_assignment_score=direct_assignment_score,
         contribution_score=contribution_score,
         discussion_score=discussion_score,
-        train_checkpoint_date=datetime.strptime("2024-08-12", "%Y-%m-%d"),
+        train_checkpoint_date=datetime.strptime("2024-06-27", "%Y-%m-%d"),
     )
 
     recommendations = []
@@ -235,12 +250,12 @@ def evaluate_recommendations(params):
 # }
 
 parameter_ranges = {
-    "similarity_prediction_weight": [0.65],
-    "time_decay_factor": [0.01],
+    "similarity_prediction_weight": [0.25],
+    "time_decay_factor": [0.001],
     "direct_assignment_score": [0.5],
     "contribution_score": [1.5],
-    "discussion_score": [0.2],
-    "similarity_threshold": [0.4],
+    "discussion_score": [0.1],
+    "similarity_threshold": np.arange(0, 1.01, 0.05),
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))
