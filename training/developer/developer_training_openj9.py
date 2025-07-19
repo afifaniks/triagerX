@@ -47,6 +47,7 @@ with open(args.config, "r") as stream:
 # Set each field from the YAML config
 dataset_path = args.dataset_path
 seed = args.seed
+sample_threshold = args.threshold
 
 logger.debug(
     f"Config\n=========================\n{config}\n=========================\n"
