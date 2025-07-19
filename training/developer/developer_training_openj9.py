@@ -37,6 +37,7 @@ parser.add_argument(
     "--dataset_path", type=str, required=True, help="Path of the dataset"
 )
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
+parser.add_argument("--threshold", type=int, default=20, help="Sample threshold for developers")
 args = parser.parse_args()
 
 logger.debug(f"Loading training configuration from: {args.config}")
@@ -47,7 +48,9 @@ with open(args.config, "r") as stream:
 dataset_path = args.dataset_path
 seed = args.seed
 
-logger.debug(f"Config\n=========================\n{config}\n=========================\n")
+logger.debug(
+    f"Config\n=========================\n{config}\n=========================\n"
+)
 use_description = config.get("use_description")
 base_transformer_models = config.get("base_transformer_models")
 unfrozen_layers = config.get("unfrozen_layers")
@@ -113,7 +116,6 @@ df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
-sample_threshold = 20
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
 df_train = df_train[df_train["owner"].isin(filtered_developers)]

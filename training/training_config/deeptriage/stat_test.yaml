@@ -3,13 +3,11 @@ model1_transformer_models:
  - "microsoft/deberta-base"
  - "roberta-base"
 model2_transformer_models:
-  - "roberta-large"
+  - "bert-large-uncased"
 model1_unfrozen_layers: 3
 model1_num_classifiers: 3
-model2_unfrozen_layers: 1
+model2_unfrozen_layers: -1
 model2_num_classifiers: 1
-model1_key: "triagerx"
-model2_key: "lbtp"
 val_size: 0.1
 test_size: 0.1
 model1_dropout: 0.2
@@ -24,5 +22,7 @@ topk_indices:
   - 5
   - 10
   - 20
-model1_path: "/work/disa_lab/projects/triagerx/models/openj9/openj9_triagerx_u3c3_50_classes_last_dev_seed42.pt"
-model2_path: "/work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_openj9_block9.pt"
+model1_path: "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42_last_epoch_19.pt"
+model2_path: "/work/disa_lab/projects/triagerx/models/typescript/ts_fcn_bert-large_40_classes_last_dev_seed42.pt"
+model1_key: "triagerx"
+model2_key: "fcn-transformer"
