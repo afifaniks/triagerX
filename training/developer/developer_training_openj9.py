@@ -37,7 +37,9 @@ parser.add_argument(
     "--dataset_path", type=str, required=True, help="Path of the dataset"
 )
 parser.add_argument("--seed", type=int, required=True, help="Random seed")
-parser.add_argument("--threshold", type=int, default=20, help="Sample threshold for developers")
+parser.add_argument(
+    "--threshold", type=int, default=20, help="Sample threshold for developers"
+)
 args = parser.parse_args()
 
 logger.debug(f"Loading training configuration from: {args.config}")
@@ -66,7 +68,7 @@ epochs = config.get("epochs")
 batch_size = config.get("batch_size")
 early_stopping_patience = config.get("early_stopping_patience")
 topk_indices = config.get("topk_indices")
-run_name = config.get("run_name") + f"_seed{seed}"
+run_name = config.get("run_name") + f"_seed{seed}_th{sample_threshold}"
 weights_save_location = os.path.join(
     config.get("weights_save_location"), f"{run_name}.pt"
 )
