@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -J triagerx
-#SBATCH -t 1-00:00:00
+#SBATCH -t 4-00:00:00
 #SBATCH -n 1
 #SBATCH --mem=64G
-#SBATCH --partition=cpu2022
-#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/tfidf_%j.out
+#SBATCH --partition=cpu2023
+#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/mdn_ts0.4_%j.out
 
 source ~/miniconda3/etc/profile.d/conda.sh && \
 conda activate triagerx && \
-python /home/mdafifal.mamun/notebooks/triagerX/reproduction/tf_idf.py
+python /home/mdafifal.mamun/notebooks/triagerX/reproduction/mdn/mdn.py

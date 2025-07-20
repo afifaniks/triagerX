@@ -40,7 +40,7 @@ elif [ "$1" == "mf" ]; then
 
 elif [ "$1" == "openj9" ]; then
     python /home/mdafifal.mamun/notebooks/triagerX/reproduction/train_lbtp.py \
-        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/openj9/last_contribution/openj9_dataset_6_7_24_last_contrib.csv \
+        --dataset_path /home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_08122024.csv \
         --embedding_model_weights /work/disa_lab/projects/triagerx/models/distillation/lbtp_openj9_base.pt \
         --block 9 \
         --output_model_weights /work/disa_lab/projects/triagerx/models/lbtp_dt_gc/lbtp_openj9_block9.pt \
