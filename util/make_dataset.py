@@ -83,13 +83,15 @@ class IssueExtractor:
             raise Exception("Unsupported contribution type.")
 
     def component_split(self, labels):
+        components = []
         for label in labels.split(","):
             if "comp:" in label.lower():
-                return label.strip()
-        return None
+                components.append(label.strip())
+
+        return ",".join(components)
 
 
-json_root = "/home/mdafifal.mamun/notebooks/triagerX/data/powertoys"
+json_root = "/work/disa_lab/afif/projects/openj9/issue_repository"
 extractor = IssueExtractor()
 issues = extractor.extract_issues(json_root=json_root)
 
@@ -98,5 +100,9 @@ df = df.sort_values(by="issue_number")
 df = df.assign(owner=df["owner"].str.split(","))
 df = df.explode("owner")
 df["owner"] = df["owner"].str.lower()
+df = df.assign(component=df["component"].str.split(","))
+df = df.explode("component")
 
-df.to_csv("data/powertoys_last.csv", index=False)
+print("Component summary:\n")
+print(df.component.value_counts())
+df.to_csv("openj9_22112024_explode.csv", index=False)
