@@ -95,7 +95,7 @@ def get_developer_predictions(json_file):
     return [], []
 
 
-all_preds = os.listdir("./issues_dump")
+all_preds = os.listdir("./test_issues_dump")
 all_preds = [
     file_name
     for file_name in all_preds
@@ -109,7 +109,7 @@ total_correct_with_discussions = 0
 for pred in all_preds:
     if not pred.endswith(".json"):
         continue
-    file_path = os.path.join("./issues_dump", pred)
+    file_path = os.path.join("./test_issues_dump", pred)
     print("=" * 20)
     try:
         json_data = read_json_file(file_path)
