@@ -31,36 +31,37 @@ target_components = sorted(target_components)
 
 
 # TS
-df_train = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_train.csv"
-)
-df_test = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_test.csv"
-)
-output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/ts_grid_search_50_final_sim_threshold.csv"
-developer_model_weights = "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42.pt"
-component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
-train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/embeddings_40devs.npy"
-)
-MAX_K = 20
-
-# PAPER CONFIG
 # df_train = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_train.csv"
 # )
 # df_test = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_test.csv"
 # )
-# output_file = (
-#     "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final.csv"
-# )
-# developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/ts_grid_search_50_final_sim_threshold.csv"
+# developer_model_weights = "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42.pt"
 # component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
 # train_embeddings_path = (
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/embeddings_40devs.npy"
 # )
 # MAX_K = 20
+
+# PAPER CONFIG
+df_train = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+)
+df_test = pd.read_csv(
+    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+)
+
+output_file = (
+    "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final_test.csv"
+)
+developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
+train_embeddings_path = (
+    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+)
+MAX_K = 20
 
 # IBM CONFIG
 # df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17.csv")
@@ -147,8 +148,8 @@ if not os.path.exists(train_embeddings_path):
     np.save(train_embeddings_path, encodings)
 
 
-def get_recommendation(trx, test_idx, k_comp, k_dev, k_rank, sim):
-    test_data = df_test.iloc[test_idx]
+def get_recommendation(trx, test_idx, k_comp, k_dev, k_rank, sim, data):
+    test_data = data.iloc[test_idx]
 
     return trx.get_recommendation(
         test_data.text,
@@ -159,14 +160,14 @@ def get_recommendation(trx, test_idx, k_comp, k_dev, k_rank, sim):
     )
 
 
-def get_topk_score(recommendations, top_k):
+def get_topk_score(recommendations, top_k, data):
     combined_total = 0
     dl_total = 0
     sim_total = 0
     borda_total = 0
 
-    for idx in range(len(df_test)):
-        actual = df_test.iloc[idx]["owner"]
+    for idx in range(len(data)):
+        actual = data.iloc[idx]["owner"]
         combined_recommended = recommendations[idx]["combined_ranking"][:top_k]
         dl_recommended = recommendations[idx]["predicted_developers"][:top_k]
         sim_recommended = recommendations[idx]["similar_devs"][:top_k]
@@ -185,14 +186,14 @@ def get_topk_score(recommendations, top_k):
             borda_total += 1
 
     return (
-        dl_total / len(df_test),
-        sim_total / len(df_test),
-        combined_total / len(df_test),
-        borda_total / len(df_test),
+        dl_total / len(data),
+        sim_total / len(data),
+        combined_total / len(data),
+        borda_total / len(data),
     )
 
 
-def evaluate_recommendations(params):
+def evaluate_recommendations(params, data):
     # Extract parameters
     similarity_prediction_weight = params["similarity_prediction_weight"]
     time_decay_factor = params["time_decay_factor"]
@@ -208,7 +209,7 @@ def evaluate_recommendations(params):
         component_prediction_model=comp_model,
         developer_prediction_model=dev_model,
         similarity_model=similarity_model,
-        issues_path="/home/mdafifal.mamun/notebooks/triagerX/data/typescript/issue_data",
+        issues_path="./data/openj9/issue_data",
         train_embeddings=train_embeddings_path,
         developer_id_map=lbl2idx,
         component_id_map=comp_lbl2id,
@@ -225,17 +226,23 @@ def evaluate_recommendations(params):
 
     recommendations = []
 
-    for i in tqdm(range(len(df_test)), total=len(df_test), desc="Processing..."):
+    for i in tqdm(range(len(data)), total=len(data), desc="Processing..."):
         rec = get_recommendation(
-            trx, i, k_comp=3, k_dev=MAX_K, k_rank=20, sim=similarity_threshold
+            trx,
+            i,
+            k_comp=3,
+            k_dev=MAX_K,
+            k_rank=20,
+            sim=similarity_threshold,
+            data=data,
         )
         recommendations.append(rec)
 
-    top_1 = get_topk_score(recommendations, 1)
-    top_3 = get_topk_score(recommendations, 3)
-    top_5 = get_topk_score(recommendations, 5)
-    top_10 = get_topk_score(recommendations, 10)
-    top_20 = get_topk_score(recommendations, 20)
+    top_1 = get_topk_score(recommendations, 1, data)
+    top_3 = get_topk_score(recommendations, 3, data)
+    top_5 = get_topk_score(recommendations, 5, data)
+    top_10 = get_topk_score(recommendations, 10, data)
+    top_20 = get_topk_score(recommendations, 20, data)
 
     return top_1, top_3, top_5, top_10, top_20
 
@@ -250,18 +257,20 @@ def evaluate_recommendations(params):
 # }
 
 parameter_ranges = {
-    "similarity_prediction_weight": [0.25],
-    "time_decay_factor": [0.001],
-    "direct_assignment_score": [0.5],
-    "contribution_score": [1.5],
-    "discussion_score": [0.1],
-    "similarity_threshold": np.arange(0, 1.01, 0.05),
+    "similarity_prediction_weight": np.arange(0.1, 1.1, 0.2).tolist(),
+    "time_decay_factor": np.arange(0.001, 0.011, 0.001).tolist(),
+    "direct_assignment_score": np.arange(0, 2.01, 0.1).tolist(),
+    "contribution_score": np.arange(0, 2.01, 0.1).tolist(),
+    "discussion_score": np.arange(0, 2.01, 0.1).tolist(),
+    "similarity_threshold": np.arange(0.2, 0.801, 0.1).tolist(),
 }
 
 total_combinations = len(list(itertools.product(*parameter_ranges.values())))
 
 # Initialize an empty list to store results
 results = []
+best_params = {}
+best_top1 = -1
 
 index = 1
 # Iterate over all combinations
@@ -278,8 +287,13 @@ for params in itertools.product(*parameter_ranges.values()):
         "discussion_score": params[4],
         "similarity_threshold": params[5],
     }
+    df_val = df_test.sample(frac=0.25, random_state=42)
+    top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(params_dict, df_val)
 
-    top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(params_dict)
+    # T1Com
+    if top_1[2] > best_top1:
+        best_top1 = top_1[2]
+        best_params = params_dict
 
     # Append results to the list
     result = {
@@ -318,6 +332,22 @@ for params in itertools.product(*parameter_ranges.values()):
     df.to_csv(output_file, index=False)
 
     print(f"Grid search results saved to {output_file}")
+
+top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(best_params, df_test)
+print(f"Best Parameters: {best_params}")
+print("Test Results")
+print("Top1", top_1)
+print("Top3", top_3)
+print("Top5", top_5)
+print("Top10", top_10)
+print("Top20", top_20)
+
+with open("best_param_2.txt", "a") as f:
+    f.write(
+        f"Best Parameters: {best_params}\n"
+        f"Test Results - Top1: {top_1}, Top3: {top_3}, Top5: {top_5}, "
+        f"Top10: {top_10}, Top20: {top_20}\n"
+    )
 
 df = pd.DataFrame(results)
 

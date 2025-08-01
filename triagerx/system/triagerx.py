@@ -3,6 +3,7 @@ import math
 import os
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
@@ -137,6 +138,7 @@ class TriagerX:
 
         return recommendations
 
+    # @lru_cache(maxsize=124000)
     def _predict_components(self, issue: str, k: int) -> Tuple[List[str], List[float]]:
         """
         Predicts components related to the given issue.
@@ -167,6 +169,7 @@ class TriagerX:
 
         return predicted_components_name, prediction_score
 
+    # @lru_cache(maxsize=124000)
     def _predict_developers(self, issue: str) -> np.ndarray:
         """
         Generates developer recommendations based on the given issue.
@@ -431,6 +434,7 @@ class TriagerX:
 
         return contributions
 
+    # @lru_cache(maxsize=124000)
     def _get_top_k_similar_issues(
         self, issue: str, k: int, threshold: float
     ) -> List[Tuple[int, float]]:
