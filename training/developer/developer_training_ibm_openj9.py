@@ -127,7 +127,7 @@ df = df.sort_values(by="issue_number")
 
 df_train, df_test = train_test_split(df, test_size=test_size, shuffle=False)
 
-sample_threshold = 20
+sample_threshold = args.sample_threshold
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
 df_train = df_train[df_train["owner"].isin(filtered_developers)]
@@ -214,7 +214,7 @@ scheduler = get_linear_schedule_with_warmup(
     optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps
 )
 
-run_name = config.get("run_name") + f"_{output_size}devs_seed{seed}"
+run_name = config.get("run_name") + f"_{output_size}devs_seed{seed}_th{sample_threshold}"
 weights_save_location = os.path.join(
     config.get("weights_save_location"), f"{run_name}.pt"
 )

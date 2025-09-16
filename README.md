@@ -165,6 +165,42 @@ parameter_ranges = {
 ```
 Grid Search is implemented in this script: [`triagerx/trainer/grid_search.py`](triagerx/trainer/grid_search.py). We recommend uncommenting `@lru_cache()` in `triagerx/system/triagerx.py` file before starting grid search to speed up the process.
 
+## Evaluation
+### CBR
+The `ModelEvaluator` class in [`triagerx/trainer/model_evaluator.py`](triagerx/trainer/model_evaluator.py) can be used to evaluate pytorch-based models like TriagerX CBR or LBT-P. Sample usage:
+
+```python
+model_evaluator = ModelEvaluator()
+model_evaluator.evaluate(
+    model=model,
+    dataloader=test_dataloader,
+    device="cuda",
+    run_name=${TEST_RUN_NAME},
+    topk_indices=[1, 3, 5, 10, 20],
+    weights_save_location=${PATH_WHERE_THE_MODEL_IS_SAVED},
+    test_report_location=${OUTPUT_PATH},
+    combined_loss=False if model_key == "fcn-transformer" else True,
+)
+```
+
+### IBR
+Since, IBR depends on hyperparameter optimization, we evaluate IBR along with the whole framework after the grid search described in previous step. The [`grid_search.py`](triagerx/trainer/grid_search.py) will produce a CSV like the following format:
+| hyperparameters |    T1DL   |   T1Sim  |   T1Com  |  T1Borda |   T3DL   |   T3Sim  |   T3Com  |  T3Borda ... |
+----------------------|-----------|----------|----------|----------|----------|----------|----------|----------|
+X|X|X|X|X|X|X|X|X|X|X|X|X|X|
+
+Where
+```
+T1DL = Top-1 Accuracy of TriagerX CBR
+T1Sim = Top-1 Accuracy of TriagerX IBR
+T1Com = Top-1 Accuracy of CBR+IBR with Weighted Rank Aggregation (WRA)
+T1Borda = Top-1 Accuracy of CBR+IBR with Borda Count
+and so on...
+```
+Once the grid is optimized, the script will use the best parameters to run on the test set and print the results at the end.
+
+
+
 ## Testing
 We evaluated TriagerX on unseen issues from Openj9 repository using 17 active developers/80 issues. These issues are saved in `JSON` format in the `test_issues_dump/` directory. To run the evaluation:
 

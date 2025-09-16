@@ -43,12 +43,16 @@ parser.add_argument("--run_name", type=str, required=True, help="Run name")
 parser.add_argument(
     "--wandb_project", type=str, required=True, help="wandb_project name"
 )
+parser.add_argument(
+    "--sample_threshold", type=int, default=20, help="Minimum samples per developer"
+)
 
 # Parse arguments
 args = parser.parse_args()
 
 block = args.block
-run_name = f"{args.run_name}_block{block}"
+sample_threshold = args.sample_threshold
+run_name = f"{args.run_name}_block{block}_th{sample_threshold}"
 dataset_path = args.dataset_path
 embedding_model_weights_dir = args.embedding_model_weights
 output_model_weights = args.output_model_weights
@@ -290,7 +294,6 @@ print(f"Samples per block: {samples_per_block}, Selected block: {block}")
 df_train = sliced_df[: samples_per_block * block]
 df_test = sliced_df[samples_per_block * block : samples_per_block * (block + 1)]
 
-sample_threshold = 20
 developers = df_train["owner"].value_counts()
 filtered_developers = developers.index[developers >= sample_threshold]
 df_train = df_train[df_train["owner"].isin(filtered_developers)]
@@ -331,7 +334,7 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
 model = LBTPClassifier(
     embedding_model, output_size=len(df_train.owner_id.unique()), unfrozen_layers=3
 )
-learning_rate = 0.00001
+learning_rate = 0.0001
 epochs = 20
 batch_size = 10
 topk_indices = [3, 5, 10, 20]
@@ -447,12 +450,7 @@ for epoch_num in range(epochs):
         accuracy_top_k,
     )
 
-    val_loss = total_loss_val / len(df_train)
-
-    if val_loss < best_loss:
-        print("Found new best model. Saving weights...")
-        torch.save(model.state_dict(), output_model_weights)
-        best_loss = val_loss
+    torch.save(model.state_dict(), output_model_weights)
 
 
 print("Starting testing...")
