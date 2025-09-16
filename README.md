@@ -197,7 +197,13 @@ T1Com = Top-1 Accuracy of CBR+IBR with Weighted Rank Aggregation (WRA)
 T1Borda = Top-1 Accuracy of CBR+IBR with Borda Count
 and so on...
 ```
-Once the grid is optimized, the script will use the best parameters to run on the test set and print the results at the end.
+Once the grid is optimized, the script will use the best parameters to run on the test set and print the results for all components (e.g., CBR, IBR, WRA, etc.) at the end. The output should look like this:
+```
+Top1: {T1DL, T1Sim, T1Com, T1Borda}
+Top3: {T3DL, T3Sim, T3Com, T3Borda}
+Top5: {T5DL, T5Sim, T5Com, T5Borda}
+...
+```
 
 
 
