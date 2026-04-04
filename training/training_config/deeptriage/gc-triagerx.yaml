@@ -14,13 +14,13 @@ learning_rate: 0.00001
 epochs: 20
 batch_size: 10
 max_tokens: 256
-early_stopping_patience: null
+early_stopping_patience: 5
 topk_indices:
   - 3
   - 5
   - 10
   - 20
-run_name: "triagerx_ensemble_dt_gc_th20"
+run_name: "triagerx_gc_ensemble_deberta_roberta_base"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/deeptriage"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "google_chromium"

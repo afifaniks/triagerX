@@ -34,3 +34,5 @@ app/app_data/*
 artifacts/
 old_data/*
 training/reports/*
+test/eval_data/*
+.vscode/launch.json

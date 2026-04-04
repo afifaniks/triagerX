@@ -2,27 +2,32 @@ use_description: true
 dataset_path: "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/openj9_08122024.csv"
 target_components:
   - "comp:vm"
+  - "comp:jit"
   - "comp:jvmti"
+  - "comp:jitserver"
   - "comp:jclextensions"
   - "comp:test"
   - "comp:build"
   - "comp:gc"
+  - "comp:infra"
 base_transformer_models: 
- - "microsoft/deberta-base"
+ - "microsoft/deberta-large"
 model_key: "cnn-transformer"
-unfrozen_layers: 3
-num_classifiers: 3
+unfrozen_layers: -1
+num_classifiers: 1
 max_tokens: 256
 val_size: 0.2
 test_size: 0.2
 dropout: 0.2
 learning_rate: 0.00001
-epochs: 40
+epochs: 15
 batch_size: 10
-early_stopping_patience: 15
+early_stopping_patience: 3
 topk_indices:
+ - 1
+ - 2
  - 3
-run_name: "component_deberta-base_u3_6_classes"
+run_name: "component_deberta-large_full_cnn_9_classes"
 weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
 test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
 wandb_project: "ibm-openj9-component"

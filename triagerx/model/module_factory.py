@@ -1,23 +1,27 @@
 from typing import Dict, List, Optional
 
 import pandas as pd
+import torch.nn as nn
 from loguru import logger
 from torch.utils.data import Dataset
+from transformers import RobertaConfig, RobertaModel
 
 from triagerx.dataset import EnsembleDataset, TriageDataset
 from triagerx.model.cnn_transformer import CNNTransformer
 from triagerx.model.fcn_transformer import FCNTransformer
+from triagerx.model.lbt_p import LBTPClassifier
 from triagerx.model.prediction_model import PredictionModel
 from triagerx.model.triagerx_model import TriagerxModel
-from triagerx.model.triagerx_sequential import TriagerxFCNModel
 from triagerx.model.triagerx_pooler import TriagerxFCNPoolerModel
+from triagerx.model.triagerx_sequential import TriagerxFCNModel
 
 DEFINED_MODELS = {
     "cnn-transformer": CNNTransformer,
     "fcn-transformer": FCNTransformer,
     "triagerx": TriagerxModel,
     "triagerx-fcn": TriagerxFCNModel,
-    "triagerx-fcn-pooler": TriagerxFCNPoolerModel
+    "triagerx-fcn-pooler": TriagerxFCNPoolerModel,
+    "lbtp": LBTPClassifier,
 }
 
 DEFINED_DATASETS = {
@@ -25,7 +29,8 @@ DEFINED_DATASETS = {
     FCNTransformer.__name__: TriageDataset,
     TriagerxModel.__name__: EnsembleDataset,
     TriagerxFCNModel.__name__: EnsembleDataset,
-    TriagerxFCNPoolerModel.__name__: EnsembleDataset
+    TriagerxFCNPoolerModel.__name__: EnsembleDataset,
+    LBTPClassifier.__name__: TriageDataset,
 }
 
 
@@ -51,9 +56,20 @@ class ModelFactory:
         max_tokens: int = 512,
         num_filters: int = 256,
         label_map: Optional[Dict[int, str]] = None,
-    ) -> PredictionModel:
+    ) -> nn.Module:
         if model_key not in DEFINED_MODELS:
             raise ModuleNotFoundError(model_key, list(DEFINED_MODELS.keys()))
+
+        if model_key == "lbtp":
+            logger.debug("Using LBT-P model...")
+            model_config = RobertaConfig.from_pretrained("roberta-large")
+            model_config.num_hidden_layers = 3
+            model_config.output_hidden_states = True
+            embedding_model = RobertaModel(model_config)
+
+            return LBTPClassifier(
+                embedding_model, output_size=output_size, unfrozen_layers=3
+            )
 
         model_class = DEFINED_MODELS[model_key]
 

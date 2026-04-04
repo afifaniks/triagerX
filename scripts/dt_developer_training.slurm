@@ -4,7 +4,7 @@
 #SBATCH -n 1
 #SBATCH --mem=50G
 #SBATCH --partition=disa --gres=gpu:1
-#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/dt_%j.out
+#SBATCH --output=/home/mdafifal.mamun/notebooks/triagerX/slurm_out/dt_gc1_%j.out
 
 # Check if the first parameter is "gc" or "mc"
 CONFIG_PARAM=$1

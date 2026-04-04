@@ -1,0 +1,34 @@
+use_description: true
+target_components:
+  - "comp:vm"
+  - "comp:jit"
+  - "comp:jvmti"
+  - "comp:jitserver"
+  - "comp:jclextensions"
+  - "comp:test"
+  - "comp:build"
+  - "comp:gc"
+  - "comp:infra"
+base_transformer_models: 
+ - "microsoft/deberta-base"
+ - "roberta-base"
+model_key: "triagerx"
+unfrozen_layers: 3
+num_classifiers: 3
+max_tokens: 384
+val_size: 0.1
+test_size: 0.1
+dropout: 0.2
+learning_rate: 0.00001
+epochs: 40
+batch_size: 10
+early_stopping_patience: 15
+topk_indices:
+ - 2
+ - 3
+run_name: "component_triagerx_384tok_aug1000_nosampler_9_classes_final"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+wandb_project: "ibm-openj9-component"
+architecture: "-"
+dataset: "Openj9 Issues"

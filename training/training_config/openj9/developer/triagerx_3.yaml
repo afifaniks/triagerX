@@ -1,0 +1,26 @@
+use_description: true
+base_transformer_models: 
+ - "bert-base-uncased"
+ - "microsoft/codebert-base"
+unfrozen_layers: 3
+num_classifiers: 3
+val_size: 0.1
+test_size: 0.1
+dropout: 0.2
+learning_rate: 0.00001
+epochs: 40
+batch_size: 10
+max_tokens: 256
+early_stopping_patience: null
+topk_indices: 
+  - 3
+  - 5
+  - 10
+  - 20
+model_key: "triagerx"
+run_name: "openj9_triagerx_different_models_bert_base_uncased_and_codebert_base"
+weights_save_location: "/work/disa_lab/projects/triagerx/models/openj9"
+test_report_location: "/home/mdafifal.mamun/notebooks/triagerX/training/reports/"
+wandb_project: "openj9-developers"
+architecture: "Triagerx Ensemble"
+dataset: "Openj9 Issues"

@@ -100,6 +100,7 @@ df = TextProcessor.prepare_dataframe(
     use_summary=use_summary,
     use_description=use_description,
     component_training=True,
+    # is_openj9=True,
 )
 
 df = df.sort_values(by="issue_number")
@@ -115,6 +116,7 @@ df = df.sort_values(by="issue_number")
 df_train, df_test = train_test_split(filtered_df, test_size=test_size)
 assert set(df_train.component.unique()) == set(df_test.component.unique())
 logger.info(f"Train dataset size: {len(df_train)}\nTest dataset size: {len(df_test)}")
+print(df_train.component.value_counts())
 
 
 # Generate component ids
@@ -133,21 +135,15 @@ df_test["component_id"] = [
     label2idx[component] for component in df_test["component"].values
 ]
 
+print("Label to ID:", label2idx)
+# df_train, df_val = train_test_split(
+#     df_train, test_size=val_size, random_state=seed, shuffle=True
+# )
 
-df_train, df_val = train_test_split(
-    df_train, test_size=val_size, random_state=seed, shuffle=True
-)
-
-logger.info(
-    f"Final dataset size - Train: {len(df_train)}, Validation: {len(df_val)}, Test: {len(df_test)}"
-)
+logger.info(f"Final dataset size - Train: {len(df_train)}, Test: {len(df_test)}")
 
 # Assert each data partition has all the required components
-assert (
-    set(df_test.component.unique())
-    == set(df_val.component.unique())
-    == set(df_train.component.unique())
-)
+assert set(df_test.component.unique()) == set(df_train.component.unique())
 
 
 class_counts = np.bincount(df_train["component_id"])
@@ -178,7 +174,7 @@ train_ds = DatasetFactory.get_dataset(
     df_train, model, "text", "component_id", max_length=max_tokens
 )
 val_ds = DatasetFactory.get_dataset(
-    df_val, model, "text", "component_id", max_length=max_tokens
+    df_test, model, "text", "component_id", max_length=max_tokens
 )
 test_ds = DatasetFactory.get_dataset(
     df_test, model, "text", "component_id", max_length=max_tokens
