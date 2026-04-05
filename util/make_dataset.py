@@ -33,6 +33,7 @@ class IssueExtractor:
             "issue_url": issue["html_url"],
             "issue_state": issue["state"],
             "creator": issue["user"]["login"],
+            "created_at": issue["created_at"],
             "labels": (
                 ", ".join([label["name"] for label in issue["labels"]])
                 if issue["labels"]
@@ -91,7 +92,7 @@ class IssueExtractor:
         return ",".join(components)
 
 
-json_root = "/work/disa_lab/afif/projects/openj9/issue_repository"
+json_root = "old_data/openj9/openj9_issue_data_6_7_24"
 extractor = IssueExtractor()
 issues = extractor.extract_issues(json_root=json_root)
 
@@ -105,4 +106,4 @@ df = df.explode("component")
 
 print("Component summary:\n")
 print(df.component.value_counts())
-df.to_csv("openj9_22112024_explode.csv", index=False)
+df.to_csv("openj9_testtt.csv", index=False)
