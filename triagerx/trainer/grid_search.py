@@ -2,7 +2,7 @@ import itertools
 import os
 import sys
 from datetime import datetime
-
+import json
 import numpy as np
 import pandas as pd
 import torch
@@ -28,40 +28,46 @@ target_components = [
     "comp:gc",
 ]
 target_components = sorted(target_components)
-
+dataset_name = "openj9"  # "openj9" or "typescript"
 
 # TS
-# df_train = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_train.csv"
-# )
-# df_test = pd.read_csv(
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_test.csv"
-# )
-# output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/ts_grid_search_50_final_sim_threshold.csv"
-# developer_model_weights = "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42.pt"
-# component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
-# train_embeddings_path = (
-#     "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/embeddings_40devs.npy"
-# )
-# MAX_K = 20
+if dataset_name == "typescript":
+    df_train = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_train.csv"
+    )
+    df_test = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/ts_test.csv"
+    )
+    df_train = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/typescript_dataset_with_timestamps_train.csv"
+    )
+    df_test = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/typescript_dataset_with_timestamps_test.csv"
+    )
+    output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/rev4_ts_grid_search_50_final_sim_threshold.csv"
+    developer_model_weights = "/work/disa_lab/projects/triagerx/models/typescript/ts_triagerx_ensemble_u3_40_classes_last_dev_seed42.pt"
+    component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
+    train_embeddings_path = "/home/mdafifal.mamun/notebooks/triagerX/data/typescript/embeddings_40devs_rev3.npy"
+    issue_json_root = "/home/mdafifal.mamun/notebooks/triagerX/old_data/typescript"
+    MAX_K = 20
 
 # PAPER CONFIG
-df_train = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
-)
-df_test = pd.read_csv(
-    "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
-)
+if dataset_name == "openj9":
+    df_train = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_train.csv"
+    )
+    df_test = pd.read_csv(
+        "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/last_contribution/openj9_test.csv"
+    )
 
-output_file = (
-    "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/grid_search_50_final_test.csv"
-)
-developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
-component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
-train_embeddings_path = (
-    "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
-)
-MAX_K = 20
+    output_file = "/home/mdafifal.mamun/notebooks/triagerX/grid_reports/example_grid_search_openj9_50_weights.csv"
+    developer_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt"
+    component_model_weights = "/work/disa_lab/projects/triagerx/models/openj9/component_deberta-base_u3_6_classes_seed42.pt"
+    train_embeddings_path = (
+        "/home/mdafifal.mamun/notebooks/triagerX/data/openj9/embeddings_50devs.npy"
+    )
+    issue_json_root = "/home/mdafifal.mamun/notebooks/triagerX/old_data/openj9/openj9_issue_data_6_7_24"
+    MAX_K = 20
 
 # IBM CONFIG
 # df_train = pd.read_csv("/home/mdafifal.mamun/notebooks/triagerX/openj9_train_17.csv")
@@ -193,7 +199,7 @@ def get_topk_score(recommendations, top_k, data):
     )
 
 
-def evaluate_recommendations(params, data):
+def evaluate_recommendations(params, data, keep_changes=False):
     # Extract parameters
     similarity_prediction_weight = params["similarity_prediction_weight"]
     time_decay_factor = params["time_decay_factor"]
@@ -205,28 +211,34 @@ def evaluate_recommendations(params, data):
     expected_users = set(df_train.owner.unique())
     print(expected_users)
 
-    trx = TriagerX(
-        component_prediction_model=comp_model,
-        developer_prediction_model=dev_model,
-        similarity_model=similarity_model,
-        issues_path="./data/openj9/issue_data",
-        train_embeddings=train_embeddings_path,
-        developer_id_map=lbl2idx,
-        component_id_map=comp_lbl2id,
-        expected_developers=expected_users,
-        train_data=df_train,
-        device=device,
-        similarity_prediction_weight=similarity_prediction_weight,
-        time_decay_factor=time_decay_factor,
-        direct_assignment_score=direct_assignment_score,
-        contribution_score=contribution_score,
-        discussion_score=discussion_score,
-        train_checkpoint_date=datetime.strptime("2024-06-27", "%Y-%m-%d"),
-    )
-
     recommendations = []
+    all_preds = []
 
     for i in tqdm(range(len(data)), total=len(data), desc="Processing..."):
+
+        issue_created_at = datetime.strptime(
+            str(data.iloc[i]["created_at"]), "%Y-%m-%dT%H:%M:%SZ"
+        ).strftime("%Y-%m-%d")
+
+        trx = TriagerX(
+            component_prediction_model=comp_model,
+            developer_prediction_model=dev_model,
+            similarity_model=similarity_model,
+            issues_path=issue_json_root,
+            train_embeddings=train_embeddings_path,
+            developer_id_map=lbl2idx,
+            component_id_map=comp_lbl2id,
+            expected_developers=expected_users,
+            train_data=df_train,
+            device=device,
+            similarity_prediction_weight=similarity_prediction_weight,
+            time_decay_factor=time_decay_factor,
+            direct_assignment_score=direct_assignment_score,
+            contribution_score=contribution_score,
+            discussion_score=discussion_score,
+            train_checkpoint_date=datetime.strptime(issue_created_at, "%Y-%m-%d"),
+        )
+
         rec = get_recommendation(
             trx,
             i,
@@ -237,6 +249,33 @@ def evaluate_recommendations(params, data):
             data=data,
         )
         recommendations.append(rec)
+        test_data = data.iloc[i]
+        # if (
+        #     test_data.owner.lower() in rec["combined_ranking"][:1]
+        #     and test_data.owner.lower() not in rec["predicted_developers"][:1]
+        # ):
+        all_preds.append(
+            {
+                "issue_url": test_data.issue_url,
+                "issue_title": test_data.issue_title,
+                "issue_body": test_data.description,
+                "issue_labels": test_data.labels,
+                "issue_component": test_data.component,
+                "actual_owner": test_data.owner.lower(),
+                "final_recommended_developers": rec["combined_ranking"][:5],
+                "predicted_developers": rec["predicted_developers"][:5],
+                "similar_devs": rec["similar_devs"],
+                "ibr_contribution": (
+                    True
+                    if (
+                        test_data.owner.lower() in rec["combined_ranking"][:1]
+                        and test_data.owner.lower()
+                        not in rec["predicted_developers"][:1]
+                    )
+                    else False
+                ),
+            }
+        )
 
     top_1 = get_topk_score(recommendations, 1, data)
     top_3 = get_topk_score(recommendations, 3, data)
@@ -244,17 +283,41 @@ def evaluate_recommendations(params, data):
     top_10 = get_topk_score(recommendations, 10, data)
     top_20 = get_topk_score(recommendations, 20, data)
 
+    if keep_changes:
+        with open("openj9_best_eval_predictions.json", "w") as f:
+            json.dump(all_preds, f, indent=4)
+
     return top_1, top_3, top_5, top_10, top_20
 
 
-# parameter_ranges = {
-#     "similarity_prediction_weight": [0.5, 0.6, 0.7],
-#     "time_decay_factor": [0.01, 0.03, 0.05],
-#     "direct_assignment_score": [1.0, 1.5, 2.0],
-#     "contribution_score": [1.0, 1.5, 2.0],
-#     "discussion_score": [0.5, 1.0],
-#     "similarity_threshold": [0.5, 0.6, 0.65, 0.7],
+# NOTE: These are the parameters found in the final grid search.
+# Keeping it in the comments for debugging and future reference.
+
+# openj9_parameter_ranges = {
+#     "similarity_prediction_weight": [
+#         0.65,
+#     ],
+#     "time_decay_factor": [0.01],
+#     "direct_assignment_score": [0.5],
+#     "contribution_score": [1.5],
+#     "discussion_score": [0.2],
+#     "similarity_threshold": [0.4],
 # }
+# ts_parameter_ranges = {
+#     "similarity_prediction_weight": [
+#         0.25,
+#     ],
+#     "time_decay_factor": [0.001],
+#     "direct_assignment_score": [0.5],
+#     "contribution_score": [1.5],
+#     "discussion_score": [0.1],
+#     "similarity_threshold": [0.45],
+# }
+# if dataset_name == "openj9":
+#     parameter_ranges = openj9_parameter_ranges
+# elif dataset_name == "typescript":
+#     parameter_ranges = ts_parameter_ranges
+
 
 parameter_ranges = {
     "similarity_prediction_weight": np.arange(0.1, 1.1, 0.2).tolist(),
@@ -333,7 +396,9 @@ for params in itertools.product(*parameter_ranges.values()):
 
     print(f"Grid search results saved to {output_file}")
 
-top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(best_params, df_test)
+top_1, top_3, top_5, top_10, top_20 = evaluate_recommendations(
+    best_params, df_test, keep_changes=True
+)
 print(f"Best Parameters: {best_params}")
 print("Test Results")
 print("Top1", top_1)
