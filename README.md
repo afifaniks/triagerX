@@ -16,7 +16,7 @@ conda activate triagerxdev
 ```
 
 ## Preparing the Datasets
-Download the artifacts from this link: [**TriagerX-Additional-Artifacts.zip - Zenodo**](https://zenodo.org/records/19394446/files/TriagerX-Additional-Artifacts.zip)
+Download the `artifacts` from this link: [**https://zenodo.org/records/19464713**](https://zenodo.org/records/19464713)
 
 Extract and find the `data.zip` in the root.
 
@@ -148,7 +148,7 @@ triagerx_pipeline.get_recommendation(
         similarity_threshold=THRESHOLD_FOR_ISSUE_SIMILARITY,
     )
 ```
-This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 in the additional artifacts package (https://zenodo.org/records/19394446) that can be used directly. The pytorch checkpoint is saved as `trained_weights/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt` in the additional artifacts package.
+This is the basic setup to use TriagerX. A complete demo for Openj9 dataset is provided in [`triagerx/trainer/demo.py`](triagerx/trainer/demo.py) script. **Please note that, you have to provide the correct saved model path (`developer_model_weights`) from the training step.** We provide the trained weights for Openj9 in the additional artifacts package (https://zenodo.org/records/19464713) that can be used directly. The pytorch checkpoint is saved as `trained_weights/triagerx_ensemble_u3_50_classes_last_dev_seed42.pt` in the additional artifacts package.
 
 For TriagerX IBR, we are currently using [**all-mpnet-base-v2**](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) but any supported models by [SentenceTransformer](https://www.sbert.net/index.html) that can utilize cosine-similarity score function can be used.
 
@@ -363,10 +363,10 @@ We also evaluated some additional baselines like NCGBT (https://github.com/worme
 |------------------|----------|--------|--------|--------|--------|--------|
 | Google Chromium  | PCG      | 0.0076 | 0.0102 | 0.0165 | 0.0293 | 0.0560 |
 
-To rerun these baselines, download the additional artifacts package (https://zenodo.org/records/19394446) and follow the README provided in the package root. Replication package for both approaches are provided under the `additional_baselines` directory. Additionally, step-by-step instruction for dataset prepration, model training and reproduction is provided for both approaches in the root-level README and also in the directory respective to each baseline (e.g., additional_baselines/ncgbt/README.md). 
+To rerun these baselines, download the additional artifacts package (https://zenodo.org/records/19464713) and follow the README provided in the package root. Replication package for both approaches are provided under the `additional_baselines` directory. Additionally, step-by-step instruction for dataset prepration, model training and reproduction is provided for both approaches in the root-level README and also in the directory respective to each baseline (e.g., additional_baselines/ncgbt/README.md). 
 
 ## Additional Materials
 Some additional notebooks are provided under [`notebook`](notebook) directory that were used for evaluation/exploratory analysis or visualization.
 
 ## Additional Artifacts
-Additional artifacts for this project can be found in: https://zenodo.org/records/19394446
+Additional artifacts for this project can be found in: https://zenodo.org/records/19464713
