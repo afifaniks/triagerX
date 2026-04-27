@@ -370,3 +370,14 @@ Some additional notebooks are provided under [`notebook`](notebook) directory th
 
 ## Additional Artifacts
 Additional artifacts for this project can be found in: https://zenodo.org/records/19464713
+
+## Cite
+```bibtex
+@article{al2026triagerx,
+  title={TriagerX: Dual Transformers for Bug Triaging Tasks with Content and Interaction Based Rankings},
+  author={Al Mamun, Md Afif and Uddin, Gias and Xia, Lan and Zhang, Longyu},
+  journal={IEEE Transactions on Software Engineering},
+  year={2026},
+  publisher={IEEE}
+}
+```
