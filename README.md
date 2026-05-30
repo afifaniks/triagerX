@@ -1,9 +1,8 @@
 # TriagerX
 
-
-__Accepted and published at the IEEE Transactions on Software Engineering (TSE)__
-
-__🏆 Won IBM Project of the Year 2024 Award__
+> 🎉 __Accepted and published in IEEE Transactions on Software Engineering (TSE)__
+>
+> 🏆 **Won IBM Project of the Year 2024 Award**
 
 TriagerX is a novel triaging framework designed to streamline the process of handling GitHub issues. By analyzing the title and description of a GitHub issue, and using two rankers (1) TriagerX Content-based Ranker (CBR), (2) TriagerX Interaction-based Ranker (IBR), TriagerX recommends the most appropriate developers to address the issue. This tool can significantly reduce the time and effort needed to manage and assign issues in software projects. In this README, we provide extensive guidelines on how to get TriagerX up and running.
 
