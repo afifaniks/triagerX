@@ -1,4 +1,4 @@
-# TriagerX
+# TriagerX: Dual Transformers for Bug Triaging Tasks With Content and Interaction Based Rankings
 
 > 🎉 __Accepted and published in IEEE Transactions on Software Engineering (TSE)__
 >
@@ -377,11 +377,14 @@ Additional artifacts for this project can be found in: https://zenodo.org/record
 
 ## Cite
 ```bibtex
-@article{al2026triagerx,
-  title={TriagerX: Dual Transformers for Bug Triaging Tasks with Content and Interaction Based Rankings},
+@ARTICLE{mamun2026triagerx,
   author={Al Mamun, Md Afif and Uddin, Gias and Xia, Lan and Zhang, Longyu},
-  journal={IEEE Transactions on Software Engineering},
+  journal={IEEE Transactions on Software Engineering}, 
+  title={TriagerX: Dual Transformers for Bug Triaging Tasks With Content and Interaction Based Rankings}, 
   year={2026},
-  publisher={IEEE}
-}
+  volume={52},
+  number={6},
+  pages={1842-1857},
+  doi={10.1109/TSE.2026.3685573}}
+
 ```
